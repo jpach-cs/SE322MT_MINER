@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "Win64-MinGW",
+            "includePath": [
+                "${workspaceFolder}/include"
+            ],
+            "defines": [],
+            "compilerPath": "gcc",
+            "cStandard": "c99",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}

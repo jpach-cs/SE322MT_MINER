@@ -1,0 +1,14 @@
+{
+    "terminal.integrated.defaultProfile.windows": "w64devkit",
+    "terminal.integrated.profiles.windows": {
+        "w64devkit": {
+            "path": "C:\\w64devkit\\bin\\sh.exe",
+            "args": ["-l"]
+        }
+    },
+    "files.associations": {
+        "*.h": "c",
+        "*.c": "c"
+    },
+    "editor.tabSize": 4
+}

@@ -1,0 +1,10 @@
+# skompilowane pliki
+bin/*.exe
+
+# pliki obiektów
+*.o
+*.d
+
+# system
+.DS_Store
+Thumbs.db
