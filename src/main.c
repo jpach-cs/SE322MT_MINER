@@ -21,6 +21,50 @@ static const float GRAVITY    = 0.4f;             /* px / frame²           */
 static const float JUMP_FORCE = -7.5f;            /* px / frame, upward    */
 static const float MAX_FALL   = 9.0f;             /* must stay < TILE_SIZE */
 
+typedef enum {
+    TILE_EMPTY = 0,
+    TILE_EARTH
+} TileType;
+typedef struct {
+    TileType tiles[MAP_ROWS][MAP_COLS];
+} GameMap;
+
+static bool TileSolid(const GameMap *m, int col, int row) {
+    if (col < 0 || col >= MAP_COLS) {
+        return true;
+    }
+    if (row < 0 || row >= MAP_ROWS) {
+        return true;
+    }
+    return m->tiles[row][col] != TILE_EMPTY;
+}
+
+static void MapInit(GameMap *m) {
+    for (int r = 0; r < MAP_ROWS; r++) {
+        for (int c = 0; c < MAP_COLS; c++) {
+            m->tiles[r][c] = TILE_EMPTY;
+        }
+    }
+
+    int floorRow = (MAP_ROWS * 4) / 5;
+    for (int r = floorRow; r < MAP_ROWS; r++) {
+        for (int c = 0; c < MAP_COLS; c++) {
+            m->tiles[r][c] = TILE_EARTH;
+        }
+    }
+}
+
+static void MapDraw(const GameMap *m) {
+    for (int r = 0; r < MAP_ROWS; r++) {
+        for (int c = 0; c < MAP_COLS; c++) {
+            if (m->tiles[r][c] == TILE_EMPTY) {
+                continue;
+            }
+            DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE, DARKBROWN);
+        }
+    }
+}
+
 int main(void)
 {
     // Initialization
@@ -34,6 +78,9 @@ int main(void)
     bool facingRight = true;
 
     SetTargetFPS(60);
+
+    GameMap map;
+    MapInit(&map);
 
     // Main game loop
     while (!WindowShouldClose())
@@ -82,8 +129,7 @@ int main(void)
         BeginDrawing();
             ClearBackground((Color){ 30, 20, 10, 255 });
 
-            // floor
-            DrawRectangle(0, (int)groundY, SCREEN_W, SCREEN_H - (int)groundY, DARKBROWN);
+            MapDraw(&map);
 
             /* player placeholder – green = facing right, lime = facing left */
             DrawRectangle((int)pos.x, (int)pos.y, PLAYER_W, PLAYER_H, facingRight ? LIME : GREEN);
