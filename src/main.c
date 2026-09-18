@@ -31,6 +31,51 @@ static const float GRAVITY    = 0.4f;             /* px / frame²           */
 static const float JUMP_FORCE = -7.5f;            /* px / frame, upward    */
 static const float MAX_FALL   = 9.0f;             /* must stay < TILE_SIZE */
 
+typedef enum {
+    TILE_EMPTY = 0,   /* air  – nothing drawn, player falls through */
+    TILE_EARTH        /* dirt – drawn as rectangle, solid ground     */
+} TileType;
+
+typedef struct {
+    TileType tiles[MAP_ROWS][MAP_COLS];
+} GameMap;
+
+static bool TileSolid(const GameMap *m, int col, int row)
+{
+    if (col < 0 || col >= MAP_COLS) return true;
+    if (row < 0 || row >= MAP_ROWS) return true;
+    return m->tiles[row][col] != TILE_EMPTY;
+}
+
+static void MapInit(GameMap *m)
+{
+    /* step 1: fill everything with air */
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            m->tiles[r][c] = TILE_EMPTY;
+
+    /* step 2: solid floor – rows 21 to 26 */
+    int floorRow = (MAP_ROWS * 4) / 5;   /* = 21 */
+    for (int r = floorRow; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            m->tiles[r][c] = TILE_EARTH;
+}
+
+static void MapDraw(const GameMap *m)
+{
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++) {
+            if (m->tiles[r][c] == TILE_EMPTY) continue;
+            DrawRectangle(
+                c * TILE_SIZE,
+                r * TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+                DARKBROWN
+            );
+        }
+}
+
 int main(void)
 {
     // Initialization
@@ -47,6 +92,10 @@ int main(void)
     Vector2 vel         = { 0.0f, 0.0f };
     bool    onGround    = true;
     bool    facingRight = true;
+
+    GameMap map;
+    MapInit(&map);
+
 
     SetTargetFPS(60);
 
@@ -90,11 +139,9 @@ pos.y += vel.y;
         BeginDrawing();
 
             ClearBackground((Color){ 18, 10, 5, 255 });
-
-            /* temporary floor */
-            DrawRectangle(0, (int)groundY,
-                        SCREEN_W, SCREEN_H - (int)groundY,
-                        DARKBROWN);
+            
+            /* add this */
+            MapDraw(&map);
 
             /* player placeholder – green = facing right, lime = facing left */
             DrawRectangle((int)pos.x, (int)pos.y,
