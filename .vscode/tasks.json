@@ -8,12 +8,14 @@
             "options": {
                 "shell": {
                     "executable": "C:\\w64devkit\\bin\\sh.exe",
-                    "args": ["-c"]
+                    "args": [
+                        "-c"
+                    ]
                 }
             },
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": true   // False
             },
             "presentation": {
                 "reveal": "always",
@@ -28,7 +30,9 @@
             "options": {
                 "shell": {
                     "executable": "C:\\w64devkit\\bin\\sh.exe",
-                    "args": ["-c"]
+                    "args": [
+                        "-c"
+                    ]
                 }
             },
             "group": {

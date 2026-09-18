@@ -1,5 +1,5 @@
-CC       = gcc
-CFLAGS   = -Wall -Wextra -std=c99 -g
+CC       = "C:\\w64devkit\\bin\\gcc.exe"
+CFLAGS   = -B"C:\\w64devkit\\bin" -Wall -Wextra -std=c99 -g
 INCLUDES = -Iinclude
 LIBS     = -Llib -lraylib -lopengl32 -lgdi32 -lwinmm
 
