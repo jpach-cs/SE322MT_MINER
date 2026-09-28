@@ -119,7 +119,7 @@ int main(void)
         drawMap(&map);
 
         /* player placeholder – green = facing right, lime = facing left */
-        DrawRectangle((int)pos.x, (int)SCREEN_H - (pos.y + player_H), player_W, player_H, facingRight ? RED : LIME);
+        DrawRectangle((int)pos.x, (int)SCREEN_H - (pos.y + player_H), player_W, player_H, facingRight ? GREEN : LIME);
 
         EndDrawing();
     }
