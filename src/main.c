@@ -103,7 +103,10 @@ int main(void)
     while (!WindowShouldClose())
     {
         // ── INPUT ──────────────────────────────────────────────────────────
-        if      (IsKeyDown(KEY_RIGHT)) { vel.x =  (float)PLAYER_SPD; facingRight = true;  }
+        if (IsKeyDown(KEY_RIGHT)) {
+            vel.x =  (float)PLAYER_SPD;
+            facingRight = true; 
+        } else if ...
         else if (IsKeyDown(KEY_LEFT))  { vel.x = -(float)PLAYER_SPD; facingRight = false; }
         else                             vel.x = 0.0f;
 
