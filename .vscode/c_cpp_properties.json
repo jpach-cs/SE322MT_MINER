@@ -3,7 +3,7 @@
         {
             "name": "Win64-MinGW",
             "includePath": [
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include", 
             ],
             "defines": [],
             "compilerPath": "gcc",
