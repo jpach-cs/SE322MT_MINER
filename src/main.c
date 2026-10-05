@@ -8,12 +8,16 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 #define TILE_SIZE 10
 #define SCREEN_W 480
 #define SCREEN_H 270
 #define MAP_COLS (SCREEN_W / TILE_SIZE)
 #define MAP_ROWS (SCREEN_H / TILE_SIZE)
+#define PLAYER_MAX_STAMINA 100.f
+#define JUMP_STAMINA_COST 10.f
+#define STAMINA_FROM_FOOD 40.f
 
 static const int player_W = TILE_SIZE;
 static const int player_H = TILE_SIZE * 3;
@@ -30,6 +34,11 @@ typedef enum {
 typedef struct {
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
+
+typedef struct {
+    float stamina;
+    Vector2 pos;
+} Player;
 
 static bool tileSolid(const GameMap* map, int col, int row) {
     if (col < 0  || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return true;
@@ -66,7 +75,9 @@ int main(void)
     GameMap map;
     mapInit(&map);
 
-    Vector2 pos = {
+    Player player= {};
+    player.stamina = PLAYER_MAX_STAMINA;
+    player.pos = (Vector2) {
         (SCREEN_W / 2.0f) - (player_W / 2),
         groundY
     };
@@ -80,10 +91,10 @@ int main(void)
     {
         // ── INPUT ──────────────────────────────────────────────────────────
         if (IsKeyDown(KEY_RIGHT)) {
-            vel.x = player_speed;
+            vel.x = player_speed * (player.stamina < JUMP_STAMINA_COST ? 0.5f : 1.0f);
             facingRight = true;
         } else if (IsKeyDown(KEY_LEFT)) {
-            vel.x = -player_speed;
+            vel.x = -player_speed * (player.stamina < JUMP_STAMINA_COST ? 0.5f : 1.0f);
             facingRight = false;
         } else {
             vel.x = 0;
@@ -91,24 +102,30 @@ int main(void)
 
         // jump only when standing on the ground
         if (IsKeyPressed(KEY_SPACE) && onGround) {
-            vel.y = jump_force;
+            vel.y = jump_force * (player.stamina < JUMP_STAMINA_COST ? 0.75 : 1.0);
             onGround = false;
+            player.stamina -= JUMP_STAMINA_COST;
+        }
+
+        if (IsKeyPressed(KEY_F)) {
+            player.stamina += STAMINA_FROM_FOOD;
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
         vel.y += gravity;
         if (vel.y < max_fall) vel.y = max_fall;
-        pos = Vector2Add(pos, vel);
+        player.pos = Vector2Add(player.pos, vel);
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
-        if (pos.y <= groundY) {
-            pos.y = groundY;
+        if (player.pos.y <= groundY) {
+            player.pos.y = groundY;
             vel.y = 0.0f;
             onGround        = true;
         }
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
-        pos.x = Clamp(pos.x, 0, SCREEN_W - player_W);
+        player.pos.x = Clamp(player.pos.x, 0, SCREEN_W - player_W);
+        player.stamina = Clamp(player.stamina, 0.f, PLAYER_MAX_STAMINA);
 
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
@@ -119,8 +136,11 @@ int main(void)
         drawMap(&map);
 
         /* player placeholder – green = facing right, lime = facing left */
-        DrawRectangle((int)pos.x, (int)SCREEN_H - (pos.y + player_H), player_W, player_H, facingRight ? GREEN : LIME);
+        DrawRectangle((int)player.pos.x, (int)SCREEN_H - (player.pos.y + player_H), player_W, player_H, facingRight ? GREEN : LIME);
 
+        char staminaText[21];
+        snprintf(staminaText, 21, "Stamina: %3.1f/%3.1f", player.stamina, PLAYER_MAX_STAMINA);
+        DrawText(staminaText, 15, 15, 18, WHITE);
         EndDrawing();
     }
 
