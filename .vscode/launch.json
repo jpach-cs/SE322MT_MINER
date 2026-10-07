@@ -12,7 +12,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "gdb",
+            "miDebuggerPath": "C:/Users/rkepa/Desktop/w64devkit/bin/gdb.exe",
             "preLaunchTask": "build",
             "setupCommands": [
                 {

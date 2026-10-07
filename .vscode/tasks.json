@@ -4,10 +4,10 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "make",
+            "command": "C:/Users/rkepa/Desktop/w64devkit/bin/make.exe",
             "options": {
                 "shell": {
-                    "executable": "C:\\w64devkit\\bin\\sh.exe",
+                    "executable": "C:/Users/rkepa/Desktop/w64devkit/bin/sh.exe",
                     "args": ["-c"]
                 }
             },
@@ -27,7 +27,7 @@
             "command": "make run",
             "options": {
                 "shell": {
-                    "executable": "C:\\w64devkit\\bin\\sh.exe",
+                    "executable": "C:/Users/rkepa/Desktop/w64devkit/bin/sh.exe",
                     "args": ["-c"]
                 }
             },

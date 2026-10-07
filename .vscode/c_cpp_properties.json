@@ -6,7 +6,7 @@
                 "${workspaceFolder}/include"
             ],
             "defines": [],
-            "compilerPath": "gcc",
+            "compilerPath": "C:/Users/rkepa/Desktop/w64devkit/bin/gcc.exe",
             "cStandard": "c99",
             "intelliSenseMode": "windows-gcc-x64"
         }

@@ -20,6 +20,11 @@
 #define MAP_COLS    (SCREEN_W / TILE_SIZE)   /* 48 */
 #define MAP_ROWS    (SCREEN_H / TILE_SIZE)   /* 27 */
 
+/* ── #define for the variables that will not change ─────────────────────────*/
+
+#define PLAYER_MAX_STAMINA 100.0f
+#define STAMINA_FROM_FOOD 25.0f
+
 /* ── static const for everything else ───────────────────────────────────────
    These values are only used in runtime calculations.
    static const gives them a type, a name visible in the debugger,
@@ -28,9 +33,30 @@
 static const int   PLAYER_W   = TILE_SIZE;        /* 10 px – 1 tile wide   */
 static const int   PLAYER_H   = TILE_SIZE * 3;    /* 30 px – 3 tiles tall  */
 static const int   PLAYER_SPD = 2;                /* pixels per frame      */
+
+
+typedef struct {                                   /* player struct */
+   float stamina;
+} Player;
+
 static const float GRAVITY    = 0.4f;             /* px / frame²           */
+static const float JUMP_STAMINA_COST = 10.0f;
 static const float JUMP_FORCE = -7.5f;            /* px / frame, upward    */
 static const float MAX_FALL   = 9.0f;             /* must stay < TILE_SIZE */
+
+void UpdatePlayerStamina(Player *stam) {                      /* updates the player stamina after jumping */
+    stam->stamina -= JUMP_STAMINA_COST;                                                         
+};
+
+void RegenerateStaminaFromFood(Player *food) {
+    food->stamina += STAMINA_FROM_FOOD; 
+};
+
+void DRAWDEBUGSTAMINA(Player *player) {
+    char stam_amount[30];
+
+    //DrawText(TextFormat("%3.0f / 100", player.stamina), 300, 300, 20, WHITE);
+}
 
 typedef enum {
     TILE_EMPTY = 0,   /* air  – nothing drawn, player falls through */
@@ -94,6 +120,8 @@ int main(void)
     const float jumpForce  = -12.0f;
     // const float groundY    = screenHeight - 80.0f;  // top edge of the floor replaced by step 4a
 
+    Player player = {100.0f};           /* initializing player's starting stamina as the max */
+
     InitWindow(SCREEN_W, SCREEN_H, "Montana Tech Miner");
 
     // these two added here to initial map after the window is initialized and before anything else starts.
@@ -120,8 +148,15 @@ int main(void)
         else                             vel.x = 0.0f;
 
         if (IsKeyPressed(KEY_SPACE) && onGround) {
-            vel.y    = JUMP_FORCE;
-            onGround = false;
+            if (player.stamina >= JUMP_STAMINA_COST) {
+                UpdatePlayerStamina(&player);
+                vel.y    = JUMP_FORCE;                  /* moved this and onGround here to reflect needing stamina to jump  */
+                onGround = false;
+            }
+            else {
+                vel.y = JUMP_FORCE / 2; /* halves the jump height*/
+                onGround = false;
+            }
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
@@ -130,6 +165,9 @@ int main(void)
 
         pos.x += vel.x;
         pos.y += vel.y;
+
+        // ── FOOD TILE DETECTION ────────────────────────────────────────────
+        if (pos.x && pos.y == )
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
         if (pos.y + PLAYER_H >= groundY) {
@@ -157,6 +195,9 @@ int main(void)
                         PLAYER_W, PLAYER_H,
                         facingRight ? GREEN : LIME);
 
+            /* stamina bar thing */
+            //DRAWDEBUGSTAMINA(player);
+
         EndDrawing();
     }
 
@@ -165,4 +206,3 @@ int main(void)
     return 0;
 }
 
-// just to be sure, this is the original :P
