@@ -15,12 +15,16 @@
 #define MAP_COLS (SCREEN_W / TILE_SIZE) /* 48 */
 #define MAP_ROWS (SCREEN_H / TILE_SIZE) /* 27 */
 
-static int PLAYER_W = TILE_SIZE;       /* 10 px – 1 tile wide   */
-static int PLAYER_H = TILE_SIZE * 3;   /* 30 px – 3 tiles tall  */
-static const int PLAYER_SPD = 2;       /* pixels per frame      */
-static const float GRAVITY = 0.4f;     /* px / frame²           */
-static const float JUMP_FORCE = -7.5f; /* px / frame, upward    */
-static const float MAX_FALL = 9.0f;    /* must stay < TILE_SIZE */
+#define STAMINA_TEXT_X 15
+#define STAMINA_TEXT_Y 15
+#define STAMINA_TEXT_FONT 18
+
+static const int PLAYER_W = TILE_SIZE;     /* 10 px – 1 tile wide   */
+static const int PLAYER_H = TILE_SIZE * 3; /* 30 px – 3 tiles tall  */
+static const int PLAYER_SPD = 2;           /* pixels per frame      */
+static const float GRAVITY = 0.4f;         /* px / frame²           */
+static const float JUMP_FORCE = -7.5f;     /* px / frame, upward    */
+static const float MAX_FALL = 9.0f;        /* must stay < TILE_SIZE */
 static const float PLAYER_MAX_STAMINA = 15.0f;
 static const float JUMP_STAMINA_COST = 15.0f;
 static const float STAMINA_FROM_FOOD = 40.0f;
@@ -142,7 +146,7 @@ int main(void)
         DrawRectangle((int)pos.x, (int)pos.y, PLAYER_W, PLAYER_H, facingRight ? LIME : GREEN);
 
         // stamina is displayed as a percentage
-        DrawText(TextFormat("Stamina: %f / 100.0", player.stamina / PLAYER_MAX_STAMINA * 100), 15, 15, 20, WHITE);
+        DrawText(TextFormat("Stamina: %f / 100.0", player.stamina / PLAYER_MAX_STAMINA * 100), STAMINA_TEXT_X, STAMINA_TEXT_Y, STAMINA_TEXT_FONT, WHITE);
 
         EndDrawing();
     }
@@ -155,7 +159,7 @@ int main(void)
 static void UpdatePlayerStamina(Player *player)
 {
     player->stamina -= JUMP_STAMINA_COST;
-    player->stamina = player->stamina > 0 ? player->stamina : 0.0f; // ensure stamina does not go below 0
+    player->stamina += player->stamina < 0 ? JUMP_STAMINA_COST : 0.0f; // ensure stamina does not go below 0
 }
 
 static void RegenerateStaminaFromFood(Player *player)
