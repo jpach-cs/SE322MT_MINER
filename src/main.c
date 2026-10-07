@@ -188,7 +188,7 @@ int main(void)
 
         // ── FOOD COLLISION ─────────────────────────────────────────────────
         Vector2 TilePos = ConvertPlayerPositionToTile(player);
-        if (map.tiles[(int)TilePos.y][(int)TilePos.x] == TILE_FOOD || map.tiles[(int)TilePos.y][(int)TilePos.x] == TILE_FOOD)
+        if (map.tiles[(int)TilePos.y][(int)TilePos.x] == TILE_FOOD)
         {
             restoreStamina(player, STAMINA_FROM_FOOD);
             map.tiles[(int)TilePos.y][(int)TilePos.x] = TILE_EMPTY;
