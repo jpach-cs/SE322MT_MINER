@@ -7,6 +7,9 @@
 
 #include "raylib.h"
 #include <stdbool.h>
+#include <stdlib.h> // needed for malloc
+#include "character.h"
+#include <stdio.h>  // needed for printf debugging
 
 #define TILE_SIZE 10
 #define SCREEN_W 480
@@ -21,10 +24,19 @@ static const float GRAVITY = 0.4f;
 static const float JUMP_FORCE = -7.5f;
 static const float MAX_FALL = 9.0f;
 
+Vector2 ConvertPlayerPositionToTile(Character *player)
+{
+    Vector2 TilePos;
+    TilePos.x = (int)(player->position.x / TILE_SIZE);
+    TilePos.y = (int)(player->position.y / TILE_SIZE);
+    return TilePos;
+}
+
 typedef enum 
 {
     TILE_EMPTY = 0,
-    TILE_EARTH     
+    TILE_EARTH,     
+    TILE_FOOD
 } TileType;
 
 typedef struct 
@@ -32,12 +44,12 @@ typedef struct
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
 
-static bool TileSolid(const GameMap *m, int col, int row)
-{
-    if (col < 0 || col >= MAP_COLS) return true;
-    if (row < 0 || row >= MAP_ROWS) return true;
-    return m->tiles[row][col] != TILE_EMPTY;
-}
+// static bool TileSolid(const GameMap *m, int col, int row)
+// {
+//     if (col < 0 || col >= MAP_COLS) return true;
+//     if (row < 0 || row >= MAP_ROWS) return true;
+//     return m->tiles[row][col] != TILE_EMPTY;
+// }
 
 static void MapInit(GameMap *m)
 {
@@ -56,13 +68,26 @@ static void MapDraw(const GameMap *m)
     for (int r = 0; r < MAP_ROWS; r++)
         for (int c = 0; c < MAP_COLS; c++) {
             if (m->tiles[r][c] == TILE_EMPTY) continue;
-            DrawRectangle(
-                c * TILE_SIZE,
-                r * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-                DARKBROWN
-            );
+            if (m->tiles[r][c] == TILE_EARTH)
+            {
+                DrawRectangle(
+                    c * TILE_SIZE,
+                    r * TILE_SIZE,
+                    TILE_SIZE,
+                    TILE_SIZE,
+                    DARKBROWN
+                );
+            }
+            if (m->tiles[r][c] == TILE_FOOD)
+            {
+                DrawRectangle(
+                    c * TILE_SIZE,
+                    r * TILE_SIZE,
+                    TILE_SIZE,
+                    TILE_SIZE,
+                    YELLOW
+                );
+            }
         }
 }
 
@@ -75,11 +100,20 @@ int main(void)
 
     GameMap map;
     MapInit(&map);
+    map.tiles[15][30] = TILE_FOOD;
+    map.tiles[18][18] = TILE_FOOD;
 
-    Vector2 pos = {SCREEN_W / 2 - SCREEN_H / 2, groundY - (float)(PLAYER_H)};
-    Vector2 vel = { 0.0f, 0.0f };
-    bool onGround = true;
-    bool facingRight = true;
+    // Initialize Player Character
+    Character *player = malloc(sizeof(Character));
+
+    if (player != NULL)
+    {
+        player->position = (Vector2){SCREEN_W / 2 - SCREEN_H / 2, groundY - (float)(PLAYER_H)};
+        player->velocity = (Vector2){0.0f, 0.0f};
+        player->facingRight = true;
+        player->onGround = true; 
+        player->stamina = PLAYER_MAX_STAMINA;
+    }
 
     SetTargetFPS(60);
 
@@ -89,47 +123,85 @@ int main(void)
         // ── INPUT ──────────────────────────────────────────────────────────
         if (IsKeyDown(KEY_D) && !IsKeyDown(KEY_A))
         {
-            vel.x = (float)PLAYER_SPD; facingRight = true;
+            if (player->stamina < JUMP_STAMINA_COST)
+            {
+                player->velocity.x = (float)(PLAYER_SPD) * 0.75f; // 75% movement speed if stamina below jump cost
+                player->facingRight = true;
+            }
+            else
+            {
+                player->velocity.x = (float)PLAYER_SPD; 
+                player->facingRight = true;
+            }
         }
         else if (IsKeyDown(KEY_A) && !IsKeyDown(KEY_D))
         {
-            vel.x = -(float)PLAYER_SPD; facingRight = false;
+            if (player->stamina < JUMP_STAMINA_COST)
+            {
+                player->velocity.x = -(float)(PLAYER_SPD) * 0.75f; // 75% movement speed if stamina below jump cost
+                player->facingRight = false;
+            }
+            else
+            {
+                player->velocity.x = -(float)PLAYER_SPD; 
+                player->facingRight = false;
+            }
         }
         else
         {
-            vel.x = 0.0f;
+            player->velocity.x = 0.0f;
         }
 
-        if (IsKeyDown(KEY_SPACE) && onGround)
+        if (IsKeyDown(KEY_SPACE) && player->onGround)
         {
-            vel.y += JUMP_FORCE;
-            onGround = false;
+            if (player->stamina >= JUMP_STAMINA_COST)
+            {
+                player->velocity.y += JUMP_FORCE;
+                useStamina(player, JUMP_STAMINA_COST);
+                player->onGround = false;
+            }
+            else
+            {
+                player->velocity.y += JUMP_FORCE * 0.5f; // 50% jump height if stamina below required for jumping
+                useStamina(player, JUMP_STAMINA_COST);
+                player->onGround = false;
+            }
+
         }
+
         // ── PHYSICS ────────────────────────────────────────────────────────
-        vel.y += GRAVITY;
-        if (vel.y > MAX_FALL)
+        player->velocity.y += GRAVITY;
+        if (player->velocity.y > MAX_FALL)
         {
-            vel.y = MAX_FALL;
+            player->velocity.y = MAX_FALL;
         }
-        pos.x += vel.x;
-        pos.y += vel.y;
+        player->position.x += player->velocity.x;
+        player->position.y += player->velocity.y;
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
-        if (pos.y + PLAYER_H >= groundY)
+        if (player->position.y + PLAYER_H >= groundY)
         {
-            pos.y = groundY - (float)(PLAYER_H);
-            vel.y = 0.0f;
-            onGround = true;
+            player->position.y = groundY - (float)(PLAYER_H);
+            player->velocity.y = 0.0f;
+            player->onGround = true;
+        }
+
+        // ── FOOD COLLISION ─────────────────────────────────────────────────
+        Vector2 TilePos = ConvertPlayerPositionToTile(player);
+        if (map.tiles[(int)TilePos.y][(int)TilePos.x] == TILE_FOOD || map.tiles[(int)TilePos.y][(int)TilePos.x] == TILE_FOOD)
+        {
+            restoreStamina(player, STAMINA_FROM_FOOD);
+            map.tiles[(int)TilePos.y][(int)TilePos.x] = TILE_EMPTY;
         }
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
-        if (pos.x < 0)
+        if (player->position.x < 0)
         {
-            pos.x = 0.0f;
+            player->position.x = 0.0f;
         }
-        if (pos.x + PLAYER_W > (float)SCREEN_W)
+        if (player->position.x + PLAYER_W > (float)SCREEN_W)
         {
-            pos.x = (float)(SCREEN_W - PLAYER_W);
+            player->position.x = (float)(SCREEN_W - PLAYER_W);
         }
 
         // ── ANIMATION ──────────────────────────────────────────────────────
@@ -141,12 +213,17 @@ int main(void)
 
             MapDraw(&map);
 
-            DrawRectangle((int)pos.x, (int)pos.y, PLAYER_W, PLAYER_H, facingRight ? GREEN : LIME);
+            DrawRectangle((int)player->position.x, (int)player->position.y, PLAYER_W, PLAYER_H, player->facingRight ? GREEN : LIME);
+
+            DrawText(TextFormat("Stamina: %.1f / %.1f", player->stamina, PLAYER_MAX_STAMINA), 15, 15, 18, WHITE);
 
         EndDrawing();
+
+        printf("x: %.2f y: %.2f || TileX: %.2f TileY: %.2f \r", player->position.x, player->position.y, TilePos.x, TilePos.y);
     }
 
     // De-Initialization
+    free(player);
     CloseWindow();
     return 0;
 }
