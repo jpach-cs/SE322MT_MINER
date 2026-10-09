@@ -153,7 +153,8 @@ int main(void)
                         facingRight ? GREEN : LIME);
 
             /* debug stamina bar */
-            DrawText(TextFormat("%3.2f / 100.0 ", player.stamina), 15, 15, 18, WHITE);
+            DrawText(TextFormat("Stamina: %3.1f / 100.0 ", player.stamina), 15, 15, 18, WHITE);
+            
         EndDrawing();
 
         // ── FOOD COLLISION  ────────────────────────────────────────────────
