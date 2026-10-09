@@ -14,6 +14,16 @@
 #define MAP_COLS    (SCREEN_W / TILE_SIZE)   /* 48 */
 #define MAP_ROWS    (SCREEN_H / TILE_SIZE)   /* 27 */
 
+#define PLAYER_MAX_STAMINA  100.0f
+#define JUMP_STAMINA_COST   15.0f
+#define STAMINA_FROM_FOOD   40.0f
+#define PLAYER_SPEED_PEN    0.75f
+#define PLAYER_JUMP_PEN     0.5f
+#define DEBUG_FONT_SIZE     18
+#define DEBUG_X             15
+#define DEBUG_Y             15
+
+
 static const int   PLAYER_W   = TILE_SIZE;        /* 10 px – 1 tile wide   */
 static const int   PLAYER_H   = TILE_SIZE * 3;    /* 30 px – 3 tiles tall  */
 static const int   PLAYER_SPD = 2;                /* pixels per frame      */
@@ -29,6 +39,10 @@ typedef enum {
 typedef struct {
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
+
+typedef struct {
+    float stamina;
+} Player;
 
 static bool TileSolid(const GameMap *m, int col, int row)
 {
@@ -66,10 +80,33 @@ static void MapDraw(const GameMap *m)
         }
 }
 
+static void UpdatePlayerStamina(Player *player)
+{
+    player->stamina -= JUMP_STAMINA_COST;
+}
+
+static void RegenerateStaminaFromFood(Player *player)
+{
+    player->stamina += STAMINA_FROM_FOOD;
+
+    // Set stamina cap to 100 if overfill
+    if (player->stamina > PLAYER_MAX_STAMINA) {
+        player->stamina = PLAYER_MAX_STAMINA;
+    }
+}
+
+static void DrawDebugStamina(const Player *player) {
+    DrawText(TextFormat("Stamina: %.1f / %.1f", player->stamina, PLAYER_MAX_STAMINA),
+    DEBUG_X, DEBUG_Y, DEBUG_FONT_SIZE, WHITE
+    );
+}
+
 int main(void)
 {
     // Initialization
     const float groundY = (float) ((MAP_ROWS * 4 / 5) * TILE_SIZE);     /* = 210 */ 
+    Player player;
+    player.stamina = PLAYER_MAX_STAMINA;
 
     InitWindow(SCREEN_W, SCREEN_H, "Montana Tech Miner");
 
@@ -90,13 +127,27 @@ int main(void)
     while (!WindowShouldClose())
     {
         // ── INPUT ──────────────────────────────────────────────────────────
-        if      (IsKeyDown(KEY_RIGHT)) { vel.x =  (float)PLAYER_SPD; facingRight = true;  }
-        else if (IsKeyDown(KEY_LEFT))  { vel.x = -(float)PLAYER_SPD; facingRight = false; }
-        else                             vel.x = 0.0f;
+        if      (IsKeyDown(KEY_RIGHT)) { 
+            vel.x =  (float)PLAYER_SPD;
+            facingRight = true;  
+        }
+        else if (IsKeyDown(KEY_LEFT))  { 
+            vel.x = -(float)PLAYER_SPD; 
+            facingRight = false; 
+        }
+        else {
+            vel.x = 0.0f;
+        }
 
-        if (IsKeyPressed(KEY_SPACE) && onGround) {
+        // When low stamina, 25% reduction
+        if (player.stamina < JUMP_STAMINA_COST) {
+            vel.x *= PLAYER_SPEED_PEN;
+        }
+
+        if (IsKeyPressed(KEY_SPACE) && onGround && player.stamina >= JUMP_STAMINA_COST) {
             vel.y    = JUMP_FORCE;
             onGround = false;
+            UpdatePlayerStamina(&player);
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
@@ -128,6 +179,8 @@ int main(void)
             DrawRectangle((int)pos.x, (int)pos.y,
                         PLAYER_W, PLAYER_H,
                         facingRight ? GREEN : LIME);
+
+            DrawDebugStamina(&player);
 
         EndDrawing();
     }
