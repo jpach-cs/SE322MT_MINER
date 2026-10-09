@@ -18,6 +18,10 @@
 #define PLAYER_MAX_STAMINA 100.f
 #define JUMP_STAMINA_COST 10.f
 #define STAMINA_FROM_FOOD 40.f
+#define STAMINA_BAR_X 15.f
+#define STAMINA_BAR_Y 15.f
+#define STAMINA_BAR_WIDTH 165.f
+#define STAMINA_BAR_HEIGHT 20.f
 
 static const int player_W = TILE_SIZE;
 static const int player_H = TILE_SIZE * 3;
@@ -60,6 +64,17 @@ static void drawMap(const GameMap* map) {
             DrawRectangle(x * TILE_SIZE, SCREEN_H - (y * TILE_SIZE), TILE_SIZE, TILE_SIZE, DARKBROWN);
         }
     }
+}
+
+static void drawStaminaBar(Player* player) {
+
+    
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, GRAY);
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, player->stamina / PLAYER_MAX_STAMINA * STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, BLUE);
+    DrawRectangleLines(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, WHITE);
+    char staminaText[21];
+    snprintf(staminaText, 21, "Stamina: %3.1f/%3.1f", player->stamina, PLAYER_MAX_STAMINA);
+    DrawText(staminaText, STAMINA_BAR_X + 1, STAMINA_BAR_Y, 18, WHITE);
 }
 
 
@@ -136,11 +151,13 @@ int main(void)
         drawMap(&map);
 
         /* player placeholder – green = facing right, lime = facing left */
-        DrawRectangle((int)player.pos.x, (int)SCREEN_H - (player.pos.y + player_H), player_W, player_H, facingRight ? GREEN : LIME);
+        float playerRot = ((player.pos.y - groundY)) * 2 * PI;
+        DrawRectanglePro((Rectangle){(int)player.pos.x, (int)SCREEN_H - (player.pos.y + player_H), player_W, player_H}, 
+        (Vector2){0, 0}, playerRot,  facingRight ? GREEN : LIME);
+        //DrawRectangle((int)player.pos.x, (int)SCREEN_H - (player.pos.y + player_H), player_W, player_H, facingRight ? GREEN : LIME);
+        MatrixRotate((Vector3){0.f,0.f,1.f}, -playerRot);
 
-        char staminaText[21];
-        snprintf(staminaText, 21, "Stamina: %3.1f/%3.1f", player.stamina, PLAYER_MAX_STAMINA);
-        DrawText(staminaText, 15, 15, 18, WHITE);
+        drawStaminaBar(&player);
         EndDrawing();
     }
 
