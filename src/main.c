@@ -8,123 +8,275 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <stdbool.h>
+#include <stdlib.h> // needed for malloc
+#include <stdio.h>  // needed for printf debugging
 
 #define TILE_SIZE 10
 #define SCREEN_W 480
 #define SCREEN_H 270
 #define MAP_COLS (SCREEN_W / TILE_SIZE)
 #define MAP_ROWS (SCREEN_H / TILE_SIZE)
+#define PLAYER_MAX_STAMINA 150.0f
+#define JUMP_STAMINA_COST 15.2f
+#define STAMINA_FROM_FOOD 40.2f
 
-static const int player_W = TILE_SIZE;
-static const int player_H = TILE_SIZE * 3;
-static const int player_speed = 2;
-static const float gravity = -0.4f;
-static const float jump_force = 7.5f;
-static const float max_fall = -9.0f;
+static const int PLAYER_W = TILE_SIZE;
+static const int PLAYER_H = TILE_SIZE * 3;
+static const int PLAYER_SPD = 2;
+static const float GRAVITY = 0.4f;
+static const float JUMP_FORCE = -7.5f;
+static const float MAX_FALL = 9.0f;
 
-typedef enum {
+static int barWidth = 100;
+static int barHeight = 15;
+static int barPosX = 15;
+static int barPosY = 35;
+
+typedef struct
+{
+    Vector2 position;
+    Vector2 velocity;
+    bool onGround;
+    bool facingRight;
+    float stamina;
+} Character;
+
+static void drawStaminaBar(Character *player, int width, int height, int posX, int posY, Color outlineColor, Color fillColor)
+{
+    // Draw outline
+    DrawRectangle(posX, posY, width, height, outlineColor);
+
+    // Draw health
+    int fillWidth = (player->stamina / PLAYER_MAX_STAMINA) * width;
+    DrawRectangle(posX, posY, fillWidth, height, fillColor);
+}
+
+static void useStamina(Character *player, float amountUsed)
+{
+    if (player->stamina < amountUsed)
+    {
+        player->stamina = 0.0f;
+    }
+    else
+    {
+        player->stamina -= amountUsed;
+    }
+}
+
+static void restoreStamina(Character *player, float amountRestored)
+{
+    if ((player->stamina + amountRestored) > PLAYER_MAX_STAMINA)
+    {
+        player->stamina = PLAYER_MAX_STAMINA;
+    }
+    else
+    {
+        player->stamina += amountRestored;
+    }
+}
+
+Vector2 ConvertPlayerPositionToTile(Character *player)
+{
+    Vector2 TilePos;
+    TilePos.x = (int)(player->position.x / TILE_SIZE);
+    TilePos.y = (int)(player->position.y / TILE_SIZE);
+    return TilePos;
+}
+
+typedef enum 
+{
     TILE_EMPTY = 0,
-    TILE_EARTH
+    TILE_EARTH,     
+    TILE_FOOD
 } TileType;
 
-typedef struct {
+typedef struct 
+{
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
 
-static bool tileSolid(const GameMap* map, int col, int row) {
-    if (col < 0  || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return true;
-    return map->tiles[row][col] != TILE_EMPTY;
+// static bool TileSolid(const GameMap *m, int col, int row)
+// {
+//     if (col < 0 || col >= MAP_COLS) return true;
+//     if (row < 0 || row >= MAP_ROWS) return true;
+//     return m->tiles[row][col] != TILE_EMPTY;
+// }
+
+static void MapInit(GameMap *m)
+{
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            m->tiles[r][c] = TILE_EMPTY;
+
+    int floorRow = (MAP_ROWS * 4) / 5;
+    for (int r = floorRow; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            m->tiles[r][c] = TILE_EARTH;
 }
 
-static void mapInit(GameMap* map) {
-    for (int y = 0; y < MAP_ROWS; y++) {
-        for (int x = 0; x < MAP_COLS; x++) {
-            map->tiles[y][x] = (y < 5 ? TILE_EARTH : TILE_EMPTY);
+static void MapDraw(const GameMap *m)
+{
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++) {
+            if (m->tiles[r][c] == TILE_EMPTY) continue;
+            if (m->tiles[r][c] == TILE_EARTH)
+            {
+                DrawRectangle(
+                    c * TILE_SIZE,
+                    r * TILE_SIZE,
+                    TILE_SIZE,
+                    TILE_SIZE,
+                    DARKBROWN
+                );
+            }
+            if (m->tiles[r][c] == TILE_FOOD)
+            {
+                DrawRectangle(
+                    c * TILE_SIZE,
+                    r * TILE_SIZE,
+                    TILE_SIZE,
+                    TILE_SIZE,
+                    YELLOW
+                );
+            }
         }
-    }
 }
-
-static void drawMap(const GameMap* map) {
-    for (int y = 0; y < MAP_ROWS; y++) {
-        for (int x = 0; x < MAP_COLS; x++) {
-            if (map->tiles[y][x] == TILE_EMPTY) continue;
-            DrawRectangle(x * TILE_SIZE, SCREEN_H - (y * TILE_SIZE), TILE_SIZE, TILE_SIZE, DARKBROWN);
-        }
-    }
-}
-
 
 int main(void)
 {
     // Initialization
-    const float groundY = 4 * TILE_SIZE;
-    //const float groundY    = (float)(MAP_ROWS * 4 / 5) * TILE_SIZE;
+    const float groundY = (float)((MAP_ROWS * 4 / 5) * TILE_SIZE); // ground is bottom 20% of screen
 
-    InitWindow(SCREEN_W, SCREEN_H, "Sample Game");
-    SetTargetFPS(60);
+    InitWindow(SCREEN_W, SCREEN_H, "Montana Tech Miner");
 
     GameMap map;
-    mapInit(&map);
+    MapInit(&map);
+    map.tiles[15][30] = TILE_FOOD;
+    map.tiles[18][18] = TILE_FOOD;
 
-    Vector2 pos = {
-        (SCREEN_W / 2.0f) - (player_W / 2),
-        groundY
-    };
-    Vector2 vel = { 0.0f, 0.0f };
-    bool onGround = true;
-    bool facingRight = true;
+    // Initialize Player Character
+    Character *player = malloc(sizeof(Character));
 
+    if (player != NULL)
+    {
+        player->position = (Vector2){SCREEN_W / 2 - SCREEN_H / 2, groundY - (float)(PLAYER_H)};
+        player->velocity = (Vector2){0.0f, 0.0f};
+        player->facingRight = true;
+        player->onGround = true; 
+        player->stamina = PLAYER_MAX_STAMINA;
+    }
+
+    SetTargetFPS(60);
 
     // Main game loop
     while (!WindowShouldClose())
     {
         // ── INPUT ──────────────────────────────────────────────────────────
-        if (IsKeyDown(KEY_RIGHT)) {
-            vel.x = player_speed;
-            facingRight = true;
-        } else if (IsKeyDown(KEY_LEFT)) {
-            vel.x = -player_speed;
-            facingRight = false;
-        } else {
-            vel.x = 0;
+        if (IsKeyDown(KEY_D) && !IsKeyDown(KEY_A))
+        {
+            if (player->stamina < JUMP_STAMINA_COST)
+            {
+                player->velocity.x = (float)(PLAYER_SPD) * 0.75f; // 75% movement speed if stamina below jump cost
+                player->facingRight = true;
+            }
+            else
+            {
+                player->velocity.x = (float)PLAYER_SPD; 
+                player->facingRight = true;
+            }
+        }
+        else if (IsKeyDown(KEY_A) && !IsKeyDown(KEY_D))
+        {
+            if (player->stamina < JUMP_STAMINA_COST)
+            {
+                player->velocity.x = -(float)(PLAYER_SPD) * 0.75f; // 75% movement speed if stamina below jump cost
+                player->facingRight = false;
+            }
+            else
+            {
+                player->velocity.x = -(float)PLAYER_SPD; 
+                player->facingRight = false;
+            }
+        }
+        else
+        {
+            player->velocity.x = 0.0f;
         }
 
-        // jump only when standing on the ground
-        if (IsKeyPressed(KEY_SPACE) && onGround) {
-            vel.y = jump_force;
-            onGround = false;
+        if (IsKeyDown(KEY_SPACE) && player->onGround)
+        {
+            if (player->stamina >= JUMP_STAMINA_COST)
+            {
+                player->velocity.y += JUMP_FORCE;
+                useStamina(player, JUMP_STAMINA_COST);
+                player->onGround = false;
+            }
+            else
+            {
+                player->velocity.y += JUMP_FORCE * 0.5f; // 50% jump height if stamina below required for jumping
+                useStamina(player, JUMP_STAMINA_COST);
+                player->onGround = false;
+            }
+
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
-        vel.y += gravity;
-        if (vel.y < max_fall) vel.y = max_fall;
-        pos = Vector2Add(pos, vel);
+        player->velocity.y += GRAVITY;
+        if (player->velocity.y > MAX_FALL)
+        {
+            player->velocity.y = MAX_FALL;
+        }
+        player->position.x += player->velocity.x;
+        player->position.y += player->velocity.y;
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
-        if (pos.y <= groundY) {
-            pos.y = groundY;
-            vel.y = 0.0f;
-            onGround        = true;
+        if (player->position.y + PLAYER_H >= groundY)
+        {
+            player->position.y = groundY - (float)(PLAYER_H);
+            player->velocity.y = 0.0f;
+            player->onGround = true;
+        }
+
+        // ── FOOD COLLISION ─────────────────────────────────────────────────
+        Vector2 TilePos = ConvertPlayerPositionToTile(player);
+        if (map.tiles[(int)TilePos.y][(int)TilePos.x] == TILE_FOOD)
+        {
+            restoreStamina(player, STAMINA_FROM_FOOD);
+            map.tiles[(int)TilePos.y][(int)TilePos.x] = TILE_EMPTY;
         }
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
-        pos.x = Clamp(pos.x, 0, SCREEN_W - player_W);
+        if (player->position.x < 0)
+        {
+            player->position.x = 0.0f;
+        }
+        if (player->position.x + PLAYER_W > (float)SCREEN_W)
+        {
+            player->position.x = (float)(SCREEN_W - PLAYER_W);
+        }
+
+        // ── ANIMATION ──────────────────────────────────────────────────────
+        
 
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
+            ClearBackground((Color){ 30, 20, 10, 255 });
 
-        ClearBackground((Color){ 18, 10, 5, 255 });
+            MapDraw(&map);
 
-        /* temporary floor */
-        drawMap(&map);
+            DrawRectangle((int)player->position.x, (int)player->position.y, PLAYER_W, PLAYER_H, player->facingRight ? GREEN : LIME);
 
-        /* player placeholder – green = facing right, lime = facing left */
-        DrawRectangle((int)pos.x, (int)SCREEN_H - (pos.y + player_H), player_W, player_H, facingRight ? GREEN : LIME);
+            DrawText(TextFormat("Stamina: %.1f / %.1f", player->stamina, PLAYER_MAX_STAMINA), 15, 15, 18, WHITE);
+
+            drawStaminaBar(player, barWidth, barHeight, barPosX, barPosY, GRAY, GREEN);
 
         EndDrawing();
+
+        printf("x: %.2f y: %.2f || TileX: %.2f TileY: %.2f \r", player->position.x, player->position.y, TilePos.x, TilePos.y);
     }
 
-    // Deinit
+    // De-Initialization
+    free(player);
     CloseWindow();
     return 0;
 }
