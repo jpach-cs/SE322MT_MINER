@@ -57,115 +57,98 @@ static void drawMap(const GameMap* map) {
 int main(void)
 {
     // Initialization
-    const int screenWidth  = 800;
-    const int screenHeight = 450;
+    const float groundY = (float)((MAP_ROWS * 4 / 5) * TILE_SIZE);   /* = 210 */
 
     const int   minerSpeed = 5;
     const float gravity    = 0.5f;
     const float jumpForce  = -12.0f;
-    const float groundY    = screenHeight - 80.0f;  // top edge of the floor
+    // const float groundY    = screenHeight - 80.0f;  // top edge of the floor replaced by step 4a
+    // another thing here cuz I accidently commited to a poorly spelt branch :sob:
 
-    InitWindow(screenWidth, screenHeight, "Montana Tech Miner");
+    Player player = {100.0f};           /* initializing player's starting stamina as the max */
 
-    const char *filename = "resources\\miner_walk.PNG"; // check "resources\\thomas.PNG"
-    Texture2D miner = LoadTexture(filename);
-    if (!isTextureValid(&miner)) {
-        while (!WindowShouldClose()) {
-            BeginDrawing();
-                ClearBackground(RAYWHITE);
-                DrawText(TextFormat("ERROR: Couldn't load %s.", filename),
-                         20, 20, 20, BLACK);
-            EndDrawing();
-        }
-        return 10;
-    }
+    InitWindow(SCREEN_W, SCREEN_H, "Montana Tech Miner");
 
-    unsigned numFrames  = 4; // 8 for thomas - line 29
-    int      frameWidth = miner.width / numFrames;
-    Rectangle frameRec  = { 0.0f, 0.0f, (float)frameWidth, (float)miner.height };
+    // these two added here to initial map after the window is initialized and before anything else starts.
+    GameMap map;
+    MapInit(&map);
 
     Vector2 pos = {
         (SCREEN_W / 2.0f) - (player_W / 2),
         groundY
+    Vector2 pos = {
+        (float)(SCREEN_W / 2 - PLAYER_W / 2),
+        groundY - (float)PLAYER_H
     };
     Vector2 vel = { 0.0f, 0.0f };
     bool onGround = true;
     bool facingRight = true;
 
+    Vector2 vel         = { 0.0f, 0.0f };
+    bool    onGround    = true;
+    bool    facingRight = true;
+
+
     SetTargetFPS(60);
+
+    // Player starting attributes
+    Player player = {100.0f};
+
 
     // Main game loop
     while (!WindowShouldClose())
     {
         // ── INPUT ──────────────────────────────────────────────────────────
-        if (IsKeyDown(KEY_RIGHT)) {
-            minerVelocity.x = minerSpeed;
-            if (frameRec.width < 0) frameRec.width = -frameRec.width; // face right
-        } else if (IsKeyDown(KEY_LEFT)) {
-            minerVelocity.x = -minerSpeed;
-            if (frameRec.width > 0) frameRec.width = -frameRec.width; // face left
-        } else {
-            minerVelocity.x = 0;
-        }
+        // changed (float)PLAYER_SPD to effective_speed
+        if      (IsKeyDown(KEY_RIGHT)) { vel.x =  effective_speed; facingRight = true;  }
+        else if (IsKeyDown(KEY_LEFT))  { vel.x = -effective_speed; facingRight = false; }
+        else                             vel.x = 0.0f;
 
-        // jump only when standing on the ground
         if (IsKeyPressed(KEY_SPACE) && onGround) {
-            minerVelocity.y = jumpForce;
+            UpdatePlayerStamina(player); 
+            vel.y    = JUMP_FORCE;
             onGround = false;
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
-        minerVelocity.y += gravity;
-        minerPosition    = Vector2Add(minerPosition, minerVelocity);
+        vel.y += GRAVITY;
+        if (vel.y > MAX_FALL) vel.y = MAX_FALL;
+
+        pos.x += vel.x;
+        pos.y += vel.y;
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
-        if (minerPosition.y + miner.height >= groundY) {
-            minerPosition.y = groundY - miner.height;
-            minerVelocity.y = 0.0f;
-            onGround        = true;
+        if (pos.y + PLAYER_H >= groundY) {
+            pos.y    = groundY - (float)PLAYER_H;
+            vel.y    = 0.0f;
+            onGround = true;
         }
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
-        if (minerPosition.x < 0)
-            minerPosition.x = 0;
-        if (minerPosition.x > screenWidth - frameWidth)
-            minerPosition.x = (float)(screenWidth - frameWidth);
+        if (pos.x < 0)                                   pos.x = 0.0f;
+        if (pos.x + PLAYER_W > (float)SCREEN_W)          pos.x = (float)(SCREEN_W - PLAYER_W);
 
         // ── ANIMATION ──────────────────────────────────────────────────────
-        bool minerMoving = (minerVelocity.x != 0.0f);
-
-        if (!onGround) {
-            frameIndex = 1;                    // in the air: frozen frame
-        } else {
-            ++frameDelayCounter;
-            if (frameDelayCounter > frameDelay) {
-                frameDelayCounter = 0;
-                if (minerMoving) {
-                    ++frameIndex;
-                    frameIndex %= numFrames;   // 0 → 1 → 2 → 3 → 0 ...
-                } else {
-                    frameIndex = 0;            // standing: first frame
-                }
-            }
-        }
-
-        // preserve direction (sign of frameRec.width) when changing frame
-        float dir      = (frameRec.width >= 0) ? 1.0f : -1.0f;
-        frameRec.x     = (float)frameWidth * frameIndex;
-        frameRec.width = dir * (float)frameWidth;
 
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
-            ClearBackground((Color){ 30, 20, 10, 255 });
 
-            // floor
-            DrawRectangle(0, (int)groundY,
-                          screenWidth, screenHeight - (int)groundY,
-                          DARKBROWN);
+            ClearBackground((Color){ 18, 10, 5, 255 });
 
-            // player
-            DrawTextureRec(miner, frameRec, minerPosition, WHITE);
+            /* temporary floor */
+            MapDraw(&map);
 
+            /* temporary food */
+            DrawRectangle(120, (int)groundY + 30, PLAYER_W / 2, PLAYER_H / 2, RED);
+
+            /* player placeholder – green = facing right, lime = facing left */
+            DrawRectangle((int)pos.x, (int)pos.y,
+                        PLAYER_W, PLAYER_H,
+                        facingRight ? GREEN : LIME);
+
+            /* debug stamina bar */
+            DrawText(TextFormat("%3.2f / 100.0 ", player.stamina), 15, 15, 18, WHITE);
+            
         EndDrawing();
 
         // ── FOOD COLLISION  ────────────────────────────────────────────────
@@ -175,7 +158,7 @@ int main(void)
     }
 
     // De-Initialization
-    UnloadTexture(miner);
     CloseWindow();
     return 0;
 }
+

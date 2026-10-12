@@ -1,0 +1,29 @@
+[33mcommit 044d359b20793797504dca3dddca6f630371adc2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mbeta/feature/stamina_system/kepa[m[33m)[m
+Author: ReiCreative <rkepa@mtech.edu>
+Date:   Fri Oct 9 10:30:09 2026 -0600
+
+    fixed up conflicts
+
+[33mcommit 35aa87f0db6bcbcd3574631bd6334d0328a3e7c3[m
+Author: ReiCreative <rkepa@mtech.edu>
+Date:   Wed Oct 7 10:55:02 2026 -0600
+
+    Stamina change functions added
+
+[33mcommit 4013cb55d62b3470cdfffcb2da01e96357a586b1[m[33m ([m[1;31morigin/feature/kepa-tilemap[m[33m, [m[1;32mfeature/kepa-tilemap[m[33m)[m
+Author: ReiCreative <rkepa@mtech.edu>
+Date:   Fri Sep 18 10:49:53 2026 -0600
+
+    feat: add tile map with EMPTY and EARTH types
+
+[33mcommit d9c921a386df241eb7d8358688256812a7986169[m[33m ([m[1;31morigin/feature/kepa-constants-placeholder[m[33m, [m[1;32mfeature/tilemap[m[33m, [m[1;32mfeature/kepa-constants-placeholder[m[33m)[m
+Author: Rei Kepa <redkepa@gmail.com>
+Date:   Thu Sep 17 22:28:17 2026 -0600
+
+    feat: replace sprite with placeholder, add defines and constants
+
+[33mcommit f048afb440d163398840486d8415ddaca7ff4ac3[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/feature/wedlake-stamina[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m
+Author: Jacob Pach <jpach@mtech.edu>
+Date:   Tue Sep 1 18:56:09 2026 -0600
+
+    initial commit - found this on dave's old laptop, good luck
