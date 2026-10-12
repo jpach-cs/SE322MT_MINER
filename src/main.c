@@ -4,222 +4,168 @@
 *   Based on RayLib 2D Challenge by Hans de Ruiter
 *
 ********************************************************************************************/
-
+#define SUPPORT_CAMERA_SYSTEM       1
 #include "raylib.h"
 // #include "raymath.h"
 #include <stdbool.h>
 
-/* ── #define only where required by the compiler ────────────────────────────
-   These values are used to declare array sizes inside a struct in Assignment 2.
-   C requires array dimensions to be compile-time constants.
-   static const int does NOT qualify as a compile-time constant in C.        */
+#define TILE_SIZE 10
+#define SCREEN_W 480
+#define SCREEN_H 270
+#define MAP_COLS (SCREEN_W / TILE_SIZE)
+#define MAP_ROWS (SCREEN_H / TILE_SIZE)
 
-#define TILE_SIZE    10
-#define SCREEN_W    480 
-#define SCREEN_H    270
-#define MAP_COLS    (SCREEN_W / TILE_SIZE)   /* 48 */
-#define MAP_ROWS    (SCREEN_H / TILE_SIZE)   /* 27 */
-
-/* ── #defines for unchanging attributes          ──────────────────────────── */
-#define PLAYER_MAX_STAMINA 100.0f
-#define STAMINA_FROM_FOOD 25.0f
-#define JUMP_STAMINA_COST 10.0f
-
-/* ── static const for everything else ───────────────────────────────────────
-   These values are only used in runtime calculations.
-   static const gives them a type, a name visible in the debugger,
-   and limits their scope to this file.                                       */
-
-static const int   PLAYER_W   = TILE_SIZE;        /* 10 px – 1 tile wide   */
-static const int   PLAYER_H   = TILE_SIZE * 3;    /* 30 px – 3 tiles tall  */
-static const int   PLAYER_SPD = 2;                /* pixels per frame      */
-
-
-typedef struct {                                   /* player struct */
-   float stamina;
-} Player;
-
-static const float GRAVITY    = 0.4f;             /* px / frame²           */
-static const float JUMP_FORCE = -7.5f;            /* px / frame, upward    */
-static const float MAX_FALL   = 9.0f;             /* must stay < TILE_SIZE */
+static const int player_W = TILE_SIZE;
+static const int player_H = TILE_SIZE * 3;
+static const int player_speed = 2;
+static const float gravity = -0.4f;
+static const float jump_force = 7.5f;
+static const float max_fall = -9.0f;
 
 typedef enum {
-    TILE_EMPTY = 0,   /* air  – nothing drawn, player falls through */
-    TILE_EARTH        /* dirt – drawn as rectangle, solid ground     */
+    TILE_EMPTY = 0,
+    TILE_EARTH
 } TileType;
 
-// GameMap struct 
 typedef struct {
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
 
-// TileSolid helper function
-/* checks if the tile at (col, row) solid? Returns true if coordinates are outside the map so the player can't leave the boundaries */
-static bool TileSolid(const GameMap *m, int col, int row)
-{
-    if (col < 0 || col >= MAP_COLS) return true;
-    if (row < 0 || row >= MAP_ROWS) return true;
-    return m->tiles[row][col] != TILE_EMPTY;
+static bool tileSolid(const GameMap* map, int col, int row) {
+    if (col < 0  || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return true;
+    return map->tiles[row][col] != TILE_EMPTY;
 }
 
-// MapInit function
-/* Called before teh game loop, and can't be called inside the loop */
-static void MapInit(GameMap *m)
-{
-    /* step 1: fill everything with air */
-    for (int r = 0; r < MAP_ROWS; r++)
-        for (int c = 0; c < MAP_COLS; c++)
-            m->tiles[r][c] = TILE_EMPTY;
-
-    /* step 2: solid floor – rows 21 to 26 */
-    int floorRow = (MAP_ROWS * 4) / 5;   /* = 21 */
-    for (int r = floorRow; r < MAP_ROWS; r++)
-        for (int c = 0; c < MAP_COLS; c++)
-            m->tiles[r][c] = TILE_EARTH;
-}
-
-// MapDraw function
-/* Name is explanitory; it draws the map before the game starts */
-static void MapDraw(const GameMap *m)
-{
-    for (int r = 0; r < MAP_ROWS; r++)
-        for (int c = 0; c < MAP_COLS; c++) {
-            if (m->tiles[r][c] == TILE_EMPTY) continue;
-            DrawRectangle(
-                c * TILE_SIZE,
-                r * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-                DARKBROWN
-            );
+static void mapInit(GameMap* map) {
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            map->tiles[y][x] = (y < 5 ? TILE_EARTH : TILE_EMPTY);
         }
-}
-
-/*  ── static variables                 ───────────────────────────────────────
-    This will be used to create changing variables like effective speed        */
-static float effective_speed = (float)PLAYER_SPD;
-static float effective_jmp = JUMP_FORCE;
-
-/* typedef struct for the player, may add more attributes in the future */
-typedef struct {
-    float stamina; 
-} Player; 
-
-// variables that can be changed or activated 
-    static float effective_speed = (float)PLAYER_SPD * 0.75f;
-    
-// function to change player stamina 
-void UpdatePlayerStamina(Player player) {
-    player.stamina -= JUMP_STAMINA_COST;
-    if (player.stamina < 0 ) { // if the player stamina goes below zero, it corrects by turning stamina to zero
-        player.stamina = 0;
     }
-    effective_speed = (float)PLAYER_SPD * 0.75f;
-    effective_jmp = JUMP_FORCE * 0.5f;
 }
 
-// function to regen stamina from food
-void RegenerateStaminaFromFood(Player player ) {
-    player.stamina += STAMINA_FROM_FOOD;
-    if (player.stamina >= PLAYER_MAX_STAMINA) { // if the player stamina overflows, it turns to the max stamina 
-        player.stamina = PLAYER_MAX_STAMINA;
+static void drawMap(const GameMap* map) {
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            if (map->tiles[y][x] == TILE_EMPTY) continue;
+            DrawRectangle(x * TILE_SIZE, SCREEN_H - (y * TILE_SIZE), TILE_SIZE, TILE_SIZE, DARKBROWN);
+        }
     }
-    effective_speed = (float)PLAYER_SPD;
-    effective_jmp = JUMP_FORCE;
 }
-
-
 
 
 int main(void)
 {
     // Initialization
-    const float groundY = (float)((MAP_ROWS * 4 / 5) * TILE_SIZE);   /* = 210 */
+    const int screenWidth  = 800;
+    const int screenHeight = 450;
 
     const int   minerSpeed = 5;
     const float gravity    = 0.5f;
     const float jumpForce  = -12.0f;
-    // const float groundY    = screenHeight - 80.0f;  // top edge of the floor replaced by step 4a
-    // another thing here cuz I accidently commited to a poorly spelt branch :sob:
+    const float groundY    = screenHeight - 80.0f;  // top edge of the floor
 
-    Player player = {100.0f};           /* initializing player's starting stamina as the max */
+    InitWindow(screenWidth, screenHeight, "Montana Tech Miner");
 
-    InitWindow(SCREEN_W, SCREEN_H, "Montana Tech Miner");
+    const char *filename = "resources\\miner_walk.PNG"; // check "resources\\thomas.PNG"
+    Texture2D miner = LoadTexture(filename);
+    if (!isTextureValid(&miner)) {
+        while (!WindowShouldClose()) {
+            BeginDrawing();
+                ClearBackground(RAYWHITE);
+                DrawText(TextFormat("ERROR: Couldn't load %s.", filename),
+                         20, 20, 20, BLACK);
+            EndDrawing();
+        }
+        return 10;
+    }
 
-    // these two added here to initial map after the window is initialized and before anything else starts.
-    GameMap map;
-    MapInit(&map);
+    unsigned numFrames  = 4; // 8 for thomas - line 29
+    int      frameWidth = miner.width / numFrames;
+    Rectangle frameRec  = { 0.0f, 0.0f, (float)frameWidth, (float)miner.height };
 
     Vector2 pos = {
-        (float)(SCREEN_W / 2 - PLAYER_W / 2),
-        groundY - (float)PLAYER_H
+        (SCREEN_W / 2.0f) - (player_W / 2),
+        groundY
     };
-
-    Vector2 vel         = { 0.0f, 0.0f };
-    bool    onGround    = true;
-    bool    facingRight = true;
-
+    Vector2 vel = { 0.0f, 0.0f };
+    bool onGround = true;
+    bool facingRight = true;
 
     SetTargetFPS(60);
-
-    // Player starting attributes
-    Player player = {100.0f};
-
 
     // Main game loop
     while (!WindowShouldClose())
     {
         // ── INPUT ──────────────────────────────────────────────────────────
-        // changed (float)PLAYER_SPD to effective_speed
-        if      (IsKeyDown(KEY_RIGHT)) { vel.x =  effective_speed; facingRight = true;  }
-        else if (IsKeyDown(KEY_LEFT))  { vel.x = -effective_speed; facingRight = false; }
-        else                             vel.x = 0.0f;
+        if (IsKeyDown(KEY_RIGHT)) {
+            minerVelocity.x = minerSpeed;
+            if (frameRec.width < 0) frameRec.width = -frameRec.width; // face right
+        } else if (IsKeyDown(KEY_LEFT)) {
+            minerVelocity.x = -minerSpeed;
+            if (frameRec.width > 0) frameRec.width = -frameRec.width; // face left
+        } else {
+            minerVelocity.x = 0;
+        }
 
+        // jump only when standing on the ground
         if (IsKeyPressed(KEY_SPACE) && onGround) {
-            UpdatePlayerStamina(player); 
-            vel.y    = JUMP_FORCE;
+            minerVelocity.y = jumpForce;
             onGround = false;
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
-        vel.y += GRAVITY;
-        if (vel.y > MAX_FALL) vel.y = MAX_FALL;
-
-        pos.x += vel.x;
-        pos.y += vel.y;
+        minerVelocity.y += gravity;
+        minerPosition    = Vector2Add(minerPosition, minerVelocity);
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
-        if (pos.y + PLAYER_H >= groundY) {
-            pos.y    = groundY - (float)PLAYER_H;
-            vel.y    = 0.0f;
-            onGround = true;
+        if (minerPosition.y + miner.height >= groundY) {
+            minerPosition.y = groundY - miner.height;
+            minerVelocity.y = 0.0f;
+            onGround        = true;
         }
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
-        if (pos.x < 0)                                   pos.x = 0.0f;
-        if (pos.x + PLAYER_W > (float)SCREEN_W)          pos.x = (float)(SCREEN_W - PLAYER_W);
+        if (minerPosition.x < 0)
+            minerPosition.x = 0;
+        if (minerPosition.x > screenWidth - frameWidth)
+            minerPosition.x = (float)(screenWidth - frameWidth);
 
         // ── ANIMATION ──────────────────────────────────────────────────────
+        bool minerMoving = (minerVelocity.x != 0.0f);
+
+        if (!onGround) {
+            frameIndex = 1;                    // in the air: frozen frame
+        } else {
+            ++frameDelayCounter;
+            if (frameDelayCounter > frameDelay) {
+                frameDelayCounter = 0;
+                if (minerMoving) {
+                    ++frameIndex;
+                    frameIndex %= numFrames;   // 0 → 1 → 2 → 3 → 0 ...
+                } else {
+                    frameIndex = 0;            // standing: first frame
+                }
+            }
+        }
+
+        // preserve direction (sign of frameRec.width) when changing frame
+        float dir      = (frameRec.width >= 0) ? 1.0f : -1.0f;
+        frameRec.x     = (float)frameWidth * frameIndex;
+        frameRec.width = dir * (float)frameWidth;
 
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
+            ClearBackground((Color){ 30, 20, 10, 255 });
 
-            ClearBackground((Color){ 18, 10, 5, 255 });
+            // floor
+            DrawRectangle(0, (int)groundY,
+                          screenWidth, screenHeight - (int)groundY,
+                          DARKBROWN);
 
-            /* temporary floor */
-            MapDraw(&map);
+            // player
+            DrawTextureRec(miner, frameRec, minerPosition, WHITE);
 
-            /* temporary food */
-            DrawRectangle(120, (int)groundY + 30, PLAYER_W / 2, PLAYER_H / 2, RED);
-
-            /* player placeholder – green = facing right, lime = facing left */
-            DrawRectangle((int)pos.x, (int)pos.y,
-                        PLAYER_W, PLAYER_H,
-                        facingRight ? GREEN : LIME);
-
-            /* debug stamina bar */
-            DrawText(TextFormat("%3.2f / 100.0 ", player.stamina), 15, 15, 18, WHITE);
-            
         EndDrawing();
 
         // ── FOOD COLLISION  ────────────────────────────────────────────────
@@ -229,7 +175,7 @@ int main(void)
     }
 
     // De-Initialization
+    UnloadTexture(miner);
     CloseWindow();
     return 0;
 }
-
