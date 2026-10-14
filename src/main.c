@@ -4,66 +4,144 @@
 *   Based on RayLib 2D Challenge by Hans de Ruiter
 *
 ********************************************************************************************/
-#define SUPPORT_CAMERA_SYSTEM       1
+
 #include "raylib.h"
 // #include "raymath.h"
 #include <stdbool.h>
 
-#define TILE_SIZE 10
-#define SCREEN_W 480
-#define SCREEN_H 270
-#define MAP_COLS (SCREEN_W / TILE_SIZE)
-#define MAP_ROWS (SCREEN_H / TILE_SIZE)
+/* ── #define only where required by the compiler ────────────────────────────
+   These values are used to declare array sizes inside a struct in Assignment 2.
+   C requires array dimensions to be compile-time constants.
+   static const int does NOT qualify as a compile-time constant in C.        */
 
-static const int player_W = TILE_SIZE;
-static const int player_H = TILE_SIZE * 3;
-static const int player_speed = 2;
-static const float gravity = -0.4f;
-static const float jump_force = 7.5f;
-static const float max_fall = -9.0f;
+#define TILE_SIZE    10
+#define SCREEN_W    480 
+#define SCREEN_H    270
+#define MAP_COLS    (SCREEN_W / TILE_SIZE)   /* 48 */
+#define MAP_ROWS    (SCREEN_H / TILE_SIZE)   /* 27 */
+
+
+/* ── stamina bar #define's and const's    ───────────────────────────────────*/
+#define STAMINA_BAR_X 15
+#define STAMINA_BAR_Y 15
+#define STAMINA_BAR_HEIGHT 10 
+#define STAMINA_BAR_WIDTH 100 
+
+
+/* ── #defines for unchanging attributes          ──────────────────────────── */
+#define PLAYER_MAX_STAMINA 100.0f
+#define STAMINA_FROM_FOOD 25.0f
+#define JUMP_STAMINA_COST 10.0f
+
+/* ── static const for everything else ─────────────────────────────────────── */
+
+static const int   PLAYER_W   = TILE_SIZE;        /* 10 px – 1 tile wide   */
+static const int   PLAYER_H   = TILE_SIZE * 3;    /* 30 px – 3 tiles tall  */
+static const int   PLAYER_SPD = 2;                /* pixels per frame      */
+
+/* typedef struct for the player, may add more attributes in the future */
+typedef struct {                                   /* player struct */
+   float stamina;
+} Player;
+
+static const float GRAVITY    = 0.4f;             /* px / frame²           */
+static const float JUMP_FORCE = -7.5f;            /* px / frame, upward    */
+static const float MAX_FALL   = 9.0f;             /* must stay < TILE_SIZE */
 
 typedef enum {
-    TILE_EMPTY = 0,
-    TILE_EARTH
+    TILE_EMPTY = 0,   /* air  – nothing drawn, player falls through */
+    TILE_EARTH        /* dirt – drawn as rectangle, solid ground     */
 } TileType;
 
+// GameMap struct 
 typedef struct {
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
 
-static bool tileSolid(const GameMap* map, int col, int row) {
-    if (col < 0  || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return true;
-    return map->tiles[row][col] != TILE_EMPTY;
+// TileSolid helper function
+/* checks if the tile at (col, row) solid? Returns true if coordinates are outside the map so the player can't leave the boundaries */
+static bool TileSolid(const GameMap *m, int col, int row)
+{
+    if (col < 0 || col >= MAP_COLS) return true;
+    if (row < 0 || row >= MAP_ROWS) return true;
+    return m->tiles[row][col] != TILE_EMPTY;
 }
 
-static void mapInit(GameMap* map) {
-    for (int y = 0; y < MAP_ROWS; y++) {
-        for (int x = 0; x < MAP_COLS; x++) {
-            map->tiles[y][x] = (y < 5 ? TILE_EARTH : TILE_EMPTY);
+// MapInit function
+/* Called before teh game loop, and can't be called inside the loop */
+static void MapInit(GameMap *m)
+{
+    /* step 1: fill everything with air */
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            m->tiles[r][c] = TILE_EMPTY;
+
+    /* step 2: solid floor – rows 21 to 26 */
+    int floorRow = (MAP_ROWS * 4) / 5;   /* = 21 */
+    for (int r = floorRow; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            m->tiles[r][c] = TILE_EARTH;
+}
+
+// MapDraw function
+/* Name is explanitory; it draws the map before the game starts */
+static void MapDraw(const GameMap *m)
+{
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++) {
+            if (m->tiles[r][c] == TILE_EMPTY) continue;
+            DrawRectangle(
+                c * TILE_SIZE,
+                r * TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+                DARKBROWN
+            );
         }
+}
+
+/*  ── variables                 ───────────────────────────────────────
+    This will be used to create changing variables like effective speed        */
+static float effective_speed = (float)PLAYER_SPD;
+static float effective_jmp = JUMP_FORCE;
+static float percentage = 100.0f;
+static int fill_width; // will be changed in the DrawStaminaBar() function 
+
+// function to change player stamina 
+void UpdatePlayerStamina(Player *player) {
+    player->stamina -= JUMP_STAMINA_COST;
+    if (player->stamina < 0 ) { // if the player stamina goes below zero, it corrects by turning stamina to zero
+        player->stamina = 0;
+    }
+    if (player->stamina < JUMP_STAMINA_COST) {
+        effective_speed = (float)PLAYER_SPD * 0.75f;
+        effective_jmp = JUMP_FORCE * 0.5f;
     }
 }
 
-static void drawMap(const GameMap* map) {
-    for (int y = 0; y < MAP_ROWS; y++) {
-        for (int x = 0; x < MAP_COLS; x++) {
-            if (map->tiles[y][x] == TILE_EMPTY) continue;
-            DrawRectangle(x * TILE_SIZE, SCREEN_H - (y * TILE_SIZE), TILE_SIZE, TILE_SIZE, DARKBROWN);
-        }
+// function to regen stamina from food
+void RegenerateStaminaFromFood(Player *player ) {
+    player->stamina += STAMINA_FROM_FOOD;
+    if (player->stamina >= PLAYER_MAX_STAMINA) { // if the player stamina overflows, it turns to the max stamina 
+        player->stamina = PLAYER_MAX_STAMINA;
     }
+    effective_speed = (float)PLAYER_SPD;
+    effective_jmp = JUMP_FORCE;
 }
 
+// function to draw the stamina bar 
+void DrawStaminaBar(const Player  *player) {
+    percentage = player->stamina / PLAYER_MAX_STAMINA;
+    fill_width = percentage * STAMINA_BAR_WIDTH; 
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, fill_width, STAMINA_BAR_HEIGHT, BLUE); // this is the background of the stamina bar, the blue part 
+    DrawRectangleLines(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, DARKGRAY); // this is the outline of the stamina bar
+    DrawText(TextFormat("Stamina: %3.2f / 100.0 ", player->stamina), 15, 55, 18, WHITE); // copied from the debug stamina text 
+}
 
 int main(void)
 {
     // Initialization
     const float groundY = (float)((MAP_ROWS * 4 / 5) * TILE_SIZE);   /* = 210 */
-
-    const int   minerSpeed = 5;
-    const float gravity    = 0.5f;
-    const float jumpForce  = -12.0f;
-    // const float groundY    = screenHeight - 80.0f;  // top edge of the floor replaced by step 4a
-    // another thing here cuz I accidently commited to a poorly spelt branch :sob:
 
     Player player = {100.0f};           /* initializing player's starting stamina as the max */
 
@@ -74,15 +152,9 @@ int main(void)
     MapInit(&map);
 
     Vector2 pos = {
-        (SCREEN_W / 2.0f) - (player_W / 2),
-        groundY
-    Vector2 pos = {
         (float)(SCREEN_W / 2 - PLAYER_W / 2),
         groundY - (float)PLAYER_H
     };
-    Vector2 vel = { 0.0f, 0.0f };
-    bool onGround = true;
-    bool facingRight = true;
 
     Vector2 vel         = { 0.0f, 0.0f };
     bool    onGround    = true;
@@ -90,10 +162,6 @@ int main(void)
 
 
     SetTargetFPS(60);
-
-    // Player starting attributes
-    Player player = {100.0f};
-
 
     // Main game loop
     while (!WindowShouldClose())
@@ -105,8 +173,8 @@ int main(void)
         else                             vel.x = 0.0f;
 
         if (IsKeyPressed(KEY_SPACE) && onGround) {
-            UpdatePlayerStamina(player); 
-            vel.y    = JUMP_FORCE;
+            UpdatePlayerStamina(&player); 
+            vel.y    = effective_jmp;
             onGround = false;
         }
 
@@ -139,21 +207,22 @@ int main(void)
             MapDraw(&map);
 
             /* temporary food */
-            DrawRectangle(120, (int)groundY + 30, PLAYER_W / 2, PLAYER_H / 2, RED);
+            DrawRectangle(120, (int)groundY - (PLAYER_H / 2) - 10 , PLAYER_W / 2, PLAYER_H / 2, RED);
 
             /* player placeholder – green = facing right, lime = facing left */
             DrawRectangle((int)pos.x, (int)pos.y,
                         PLAYER_W, PLAYER_H,
                         facingRight ? GREEN : LIME);
 
-            /* debug stamina bar */
-            DrawText(TextFormat("%3.2f / 100.0 ", player.stamina), 15, 15, 18, WHITE);
+            /* actual stamina bar */
+            DrawStaminaBar(&player);
             
         EndDrawing();
 
         // ── FOOD COLLISION  ────────────────────────────────────────────────
-        if ((int)(pos.y + PLAYER_H ) == (int)groundY + 30 && ((int)(pos.x + PLAYER_W ) == 120 - (PLAYER_W / 2) || 120 + (PLAYER_W / 2))) {
-            RegenerateStaminaFromFood(player);
+        if ((int)(pos.y + PLAYER_H ) == (int)groundY && // checks if the player is touching the bottom side of the 
+            ((int)(pos.x + PLAYER_W ) >= 120 - (PLAYER_W / 2) && (int)(pos.x + PLAYER_W ) <= 120 + (PLAYER_W / 2))) {
+            RegenerateStaminaFromFood(&player);
         }
     }
 
@@ -161,4 +230,3 @@ int main(void)
     CloseWindow();
     return 0;
 }
-
