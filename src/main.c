@@ -15,6 +15,21 @@
 #define MAP_COLS (SCREEN_W / TILE_SIZE)
 #define MAP_ROWS (SCREEN_H / TILE_SIZE)
 
+#define PLAYER_MAX_STAMINA  100.0f
+#define JUMP_STAMINA_COST   15.0f
+#define STAMINA_FROM_FOOD   40.0f
+#define PLAYER_SPEED_PEN    0.75f
+#define PLAYER_JUMP_PEN     0.5f
+//#define DEBUG_FONT_SIZE     18
+//#define DEBUG_X             15
+//#define DEBUG_Y             15
+#define STAMINA_BAR_X       15
+#define STAMINA_BAR_Y       35
+#define STAMINA_BAR_WIDTH   100
+#define STAMINA_BAR_HEIGHT  15
+#define STAMINA_FONT_SIZE   18
+
+
 static const int player_W = TILE_SIZE;
 static const int player_H = TILE_SIZE * 3;
 static const int player_speed = 2;
@@ -30,6 +45,10 @@ typedef enum {
 typedef struct {
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
+
+typedef struct {
+    float stamina;
+} Player;
 
 static bool tileSolid(const GameMap* map, int col, int row) {
     if (col < 0  || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return true;
@@ -53,12 +72,54 @@ static void drawMap(const GameMap* map) {
     }
 }
 
+static void UpdatePlayerStamina(Player *player)
+{
+    player->stamina -= JUMP_STAMINA_COST;
+}
+
+static void RegenerateStaminaFromFood(Player *player)
+{
+    player->stamina += STAMINA_FROM_FOOD;
+
+    // Set stamina cap to 100 if overfill
+    if (player->stamina > PLAYER_MAX_STAMINA) {
+        player->stamina = PLAYER_MAX_STAMINA;
+    }
+}
+
+//static void DrawDebugStamina(const Player *player) {
+//    DrawText(TextFormat("Stamina: %.1f / %.1f", player->stamina, PLAYER_MAX_STAMINA),
+//    DEBUG_X, DEBUG_Y, DEBUG_FONT_SIZE, WHITE
+//    );
+//}
+static void DrawStaminaBar(const Player *player)
+{
+    int fill_width = (int)((player->stamina / PLAYER_MAX_STAMINA) * STAMINA_BAR_WIDTH);
+
+    // Empty Bar Background
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, DARKGRAY);
+
+    // Stamina Fill
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, fill_width, STAMINA_BAR_HEIGHT, BLUE);
+
+    // Border
+    DrawRectangleLines(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, WHITE);
+
+    // Stamina Display
+    DrawText(TextFormat("Stamina: %.1f / %.1f", player->stamina, PLAYER_MAX_STAMINA),
+    STAMINA_BAR_X, STAMINA_BAR_Y + STAMINA_BAR_HEIGHT, STAMINA_FONT_SIZE, WHITE
+    );
+}
+
 
 int main(void)
 {
     // Initialization
     const float groundY = 4 * TILE_SIZE;
     //const float groundY    = (float)(MAP_ROWS * 4 / 5) * TILE_SIZE;
+
+    Player player;
+    player.stamina = PLAYER_MAX_STAMINA;
 
     InitWindow(SCREEN_W, SCREEN_H, "Sample Game");
     SetTargetFPS(60);
@@ -89,10 +150,15 @@ int main(void)
             vel.x = 0;
         }
 
-        // jump only when standing on the ground
-        if (IsKeyPressed(KEY_SPACE) && onGround) {
-            vel.y = jump_force;
+        // When low stamina, 25% reduction
+        if (player.stamina < JUMP_STAMINA_COST) {
+            vel.x *= PLAYER_SPEED_PEN;
+        }
+
+        if (IsKeyPressed(KEY_SPACE) && onGround && player.stamina >= JUMP_STAMINA_COST) {
+            vel.y    = jump_force;
             onGround = false;
+            UpdatePlayerStamina(&player);
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
@@ -120,6 +186,9 @@ int main(void)
 
         /* player placeholder – green = facing right, lime = facing left */
         DrawRectangle((int)pos.x, (int)SCREEN_H - (pos.y + player_H), player_W, player_H, facingRight ? GREEN : LIME);
+
+        //DrawDebugStamina(&player);
+        DrawStaminaBar(&player);
 
         EndDrawing();
     }
