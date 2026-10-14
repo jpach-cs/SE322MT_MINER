@@ -8,15 +8,15 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <stdbool.h>
-
+#include "player.h"
 #define TILE_SIZE    10
 #define SCREEN_W    480
 #define SCREEN_H    270
 #define MAP_COLS    (SCREEN_W / TILE_SIZE)   /* 48 */
 #define MAP_ROWS    (SCREEN_H / TILE_SIZE)   /* 27 */
 
-static const int   PLAYER_W   = TILE_SIZE;        /* 10 px – 1 tile wide   */
-static const int   PLAYER_H   = TILE_SIZE * 3;    /* 30 px – 3 tiles tall  */
+static const int   PLAYER_WIDTH   = TILE_SIZE;        /* 10 px – 1 tile wide   */
+static const int   PLAYER_HEIGHT   = TILE_SIZE * 3;    /* 30 px – 3 tiles tall  */
 static const int   PLAYER_SPD = 2;                /* pixels per frame      */
 static const float GRAVITY    = 0.4f;             /* px / frame²           */
 static const float JUMP_FORCE = -7.5f;            /* px / frame, upward    */
@@ -31,12 +31,13 @@ typedef struct {
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
 
-static bool TileSolid(const GameMap *m, int col, int row)
-{
-    if (col < 0 || col >= MAP_COLS) return true;
-    if (row < 0 || row >= MAP_ROWS) return true;
-    return m->tiles[row][col] != TILE_EMPTY;
-}
+// commented out unusedfunction
+// static bool TileSolid(const GameMap *m, int col, int row)
+// {
+//     if (col < 0 || col >= MAP_COLS) return true;
+//     if (row < 0 || row >= MAP_ROWS) return true;
+//     return m->tiles[row][col] != TILE_EMPTY;
+// }
 
 static void MapInit(GameMap *m)
 {
@@ -71,12 +72,13 @@ bool isTextureValid(const Texture2D *texture) {
     return texture->id > 0;
 }
 
+
 int main(void)
 {
-    // Initialization
-    const int   minerSpeed = 5;
-    const float gravity    = 0.5f;
-    const float jumpForce  = -12.0f;
+    // Initialization -- commented out unsed variables
+    // const int   minerSpeed = 5;
+    // const float gravity    = 0.5f;
+    // const float jumpForce  = -12.0f;
 
     const float groundY = (float)((MAP_ROWS * 4 / 5) * TILE_SIZE);   /* = 210 */
 
@@ -99,11 +101,14 @@ int main(void)
     int      frameWidth = miner.width / numFrames;
     Rectangle frameRec  = { 0.0f, 0.0f, (float)frameWidth, (float)miner.height };
 
-    Vector2 pos = {
-        (float)(SCREEN_W / 2 - PLAYER_W / 2),
-        groundY - (float)PLAYER_H
+    Player player = {
+        .stamina = MAX_STAMINA,
+        .position = {
+            (float)(SCREEN_W / 2 - PLAYER_WIDTH / 2),
+            groundY - (float)PLAYER_HEIGHT
+        },
+        .velocity = {0.0f, 0.0f}
     };
-    Vector2 vel         = { 0.0f, 0.0f };
     bool    onGround    = true;
     bool    facingRight = true;
 
@@ -117,37 +122,47 @@ int main(void)
     MapInit(&map);
     // Main game loop
     while (!WindowShouldClose())
-    {
+    {   
         // ── INPUT ──────────────────────────────────────────────────────────
-        if      (IsKeyDown(KEY_RIGHT)) { vel.x =  (float)PLAYER_SPD; facingRight = true;  }
-        else if (IsKeyDown(KEY_LEFT))  { vel.x = -(float)PLAYER_SPD; facingRight = false; }
-        else                             vel.x = 0.0f;
-
-        if (IsKeyPressed(KEY_SPACE) && onGround) {
-            vel.y    = JUMP_FORCE;
+        if(IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)){
+            player.velocity.x =  (float)PLAYER_SPD; facingRight = true;
+        }
+        else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)){
+            player.velocity.x = -(float)PLAYER_SPD;
+            facingRight = false;
+        }
+        else{
+            player.velocity.x = 0.0f;
+        }
+        
+        if (((player.stamina > 0) && (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyDown(KEY_W)) && onGround)){
+            player.velocity.y    = JUMP_FORCE;
             onGround = false;
+            player.stamina -= JUMP_COST;
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
-        vel.y += GRAVITY;
-        if (vel.y > MAX_FALL) vel.y = MAX_FALL;
+        player.velocity.y += GRAVITY;
+        if (player.velocity.y > MAX_FALL){
+            player.velocity.y = MAX_FALL;
+        }
 
-        pos.x += vel.x;
-        pos.y += vel.y;
+        player.position.x += player.velocity.x;
+        player.position.y += player.velocity.y;
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
-        if (pos.y + PLAYER_H >= groundY) {
-            pos.y    = groundY - (float)PLAYER_H;
-            vel.y    = 0.0f;
+        if (player.position.y + PLAYER_HEIGHT >= groundY) {
+            player.position.y    = groundY - (float)PLAYER_HEIGHT;
+            player.velocity.y    = 0.0f;
             onGround = true;
         }
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
-        if (pos.x < 0)                                   pos.x = 0.0f;
-        if (pos.x + PLAYER_W > (float)SCREEN_W)          pos.x = (float)(SCREEN_W - PLAYER_W);
+        if (player.position.x < 0)                                   player.position.x = 0.0f;
+        if (player.position.x + PLAYER_WIDTH > (float)SCREEN_W)          player.position.x = (float)(SCREEN_W - PLAYER_WIDTH);
 
         // ── ANIMATION ──────────────────────────────────────────────────────
-        bool minerMoving = (vel.x != 0.0f);
+        bool minerMoving = (player.velocity.x != 0.0f);
 
         if (!onGround) {
             frameIndex = 1;                    // in the air: frozen frame
@@ -178,8 +193,8 @@ int main(void)
             MapDraw(&map);
 
             /* player placeholder – green = facing right, lime = facing left */
-            DrawRectangle((int)pos.x, (int)pos.y,
-                        PLAYER_W, PLAYER_H,
+            DrawRectangle((int)player.position.x, (int)player.position.y,
+                        PLAYER_WIDTH, PLAYER_HEIGHT,
                         facingRight ? GREEN : LIME);
 
         EndDrawing();
