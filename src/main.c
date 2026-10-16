@@ -15,17 +15,17 @@
 #define MAP_COLS (SCREEN_W / TILE_SIZE) /* 48 */
 #define MAP_ROWS (SCREEN_H / TILE_SIZE) /* 27 */
 
-#define STAMINA_BAR_X 15
-#define STAMINA_BAR_Y 35
-#define STAMINA_BAR_HEIGHT 15
-#define STAMINA_BAR_WIDTH 100
+static const int STAMINA_BAR_X = 15;
+static const int STAMINA_BAR_Y = 35;
+static const int STAMINA_BAR_HEIGHT = 15;
+static const int STAMINA_BAR_WIDTH = 100;
 
-#define STAMINA_TEXT_X 130
-#define STAMINA_TEXT_Y 35
-#define STAMINA_TEXT_FONT 18
+static const int STAMINA_TEXT_X = 130;
+static const int STAMINA_TEXT_Y = 35;
+static const int STAMINA_TEXT_FONT = 18;
 
-#define STAMINA_MOVE_DRAIN .75
-#define STAMINA_JUMP_DRAIN .5
+static const float STAMINA_MOVE_DRAIN = .75;
+static const float STAMINA_JUMP_DRAIN = .5;
 
 static const int PLAYER_W = TILE_SIZE;     /* 10 px – 1 tile wide   */
 static const int PLAYER_H = TILE_SIZE * 3; /* 30 px – 3 tiles tall  */
