@@ -4,8 +4,8 @@
 #include "raylib.h"
 
 #define MAX_STAMINA 100.0f
-#define FOOD_VALUE 20.0f
-#define JUMP_COST 10.0f
+#define STAMINA_FROM_FOOD 20.0f
+#define JUMP_STAMINA_COST 10.0f
 
 typedef struct{
     float stamina;

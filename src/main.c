@@ -22,6 +22,20 @@ static const float GRAVITY    = 0.4f;             /* px / frame²           */
 static const float JUMP_FORCE = -7.5f;            /* px / frame, upward    */
 static const float MAX_FALL   = 9.0f;             /* must stay < TILE_SIZE */
 
+static const int STAMINA_BAR_WIDTH = 100;
+static const int STAMINA_BAR_HEIGHT = 10;
+static const int STAMINA_BAR_X = 15;
+static const int STAMINA_BAR_Y = 35;
+static const int STAMINA_TEXT_X = 15;
+static const int STAMINA_TEXT_Y = 5;
+
+static void drawStaminaBar(Player player, int width, int height, int posX, int posY, Color outlineColor, Color fillColor){
+    DrawRectangle(posX, posY, width, height, outlineColor);
+
+    int fillWidth = (player.stamina / MAX_STAMINA) * width;
+    DrawRectangle(posX, posY, fillWidth, height, fillColor);
+}
+
 typedef enum {
     TILE_EMPTY = 0,   /* air  – nothing drawn, player falls through */
     TILE_EARTH        /* dirt – drawn as rectangle, solid ground     */
@@ -120,26 +134,55 @@ int main(void)
 
     GameMap map;
     MapInit(&map);
+    
     // Main game loop
     while (!WindowShouldClose())
     {   
+
+        
         // ── INPUT ──────────────────────────────────────────────────────────
         if(IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)){
-            player.velocity.x =  (float)PLAYER_SPD; facingRight = true;
+            if(player.stamina == 0){
+                player.velocity.x =  (float)PLAYER_SPD * 0.75f; facingRight = true;
+                
+            }else{
+                player.velocity.x =  (float)PLAYER_SPD; facingRight = true;
+            }
         }
         else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)){
-            player.velocity.x = -(float)PLAYER_SPD;
-            facingRight = false;
+            if(player.stamina == 0){
+                player.velocity.x = -(float)PLAYER_SPD * 0.75f;
+                facingRight = false;
+            }else{
+                player.velocity.x = -(float)PLAYER_SPD;
+                facingRight = false;
+            }       
         }
         else{
             player.velocity.x = 0.0f;
         }
         
         if (((player.stamina > 0) && (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyDown(KEY_W)) && onGround)){
-            player.velocity.y    = JUMP_FORCE;
+            player.velocity.y = JUMP_FORCE;
             onGround = false;
-            player.stamina -= JUMP_COST;
+            if(player.stamina > 0){
+                player.stamina -= JUMP_STAMINA_COST;
+            }
         }
+        if (((player.stamina <= 0) && (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyDown(KEY_W)) && onGround)){
+            player.velocity.y = JUMP_FORCE * 0.5f;
+            onGround = false;
+            // player.stamina -= JUMP_STAMINA_COST;
+        }
+        // Testing cheat
+        if(IsKeyPressed(KEY_R)){
+            if(player.stamina + STAMINA_FROM_FOOD > 100){
+                player.stamina = 100;
+            }else{
+                player.stamina += STAMINA_FROM_FOOD;
+            }
+        }
+
 
         // ── PHYSICS ────────────────────────────────────────────────────────
         player.velocity.y += GRAVITY;
@@ -186,9 +229,11 @@ int main(void)
 
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
-
+            DrawRectangleLines(STAMINA_BAR_X - 1, STAMINA_BAR_Y - 1, STAMINA_BAR_WIDTH + 2, STAMINA_BAR_HEIGHT + 2, WHITE);
+            drawStaminaBar(player, STAMINA_BAR_WIDTH,STAMINA_BAR_HEIGHT,STAMINA_BAR_X,STAMINA_BAR_Y,DARKGRAY,BLUE);
             ClearBackground((Color){ 18, 10, 5, 255 });
-
+            //Syntax: DrawText(const char *text, int posX, int posY, int fontSize, Color color);
+            DrawText(TextFormat("Stamina: %.1f / 100.0", player.stamina),STAMINA_TEXT_X,STAMINA_TEXT_Y, 18 ,WHITE);
             /* temporary floor */
             MapDraw(&map);
 
