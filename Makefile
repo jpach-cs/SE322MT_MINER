@@ -1,4 +1,4 @@
-CC       = gcc
+CC       = "C:\\w64devkit\\bin\\gcc"
 CFLAGS   = -Wall -Wextra -std=c99 -g
 INCLUDES = -Iinclude
 LIBS     = -Llib -lraylib -lopengl32 -lgdi32 -lwinmm
