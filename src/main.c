@@ -4,139 +4,92 @@
 *   Based on RayLib 2D Challenge by Hans de Ruiter
 *
 ********************************************************************************************/
-
+#define SUPPORT_CAMERA_SYSTEM       1
 #include "raylib.h"
 #include <stdbool.h>
 
-/* ── #define only where required by the compiler ────────────────────────────
-   These values are used to declare array sizes inside a struct in Assignment 2.
-   C requires array dimensions to be compile-time constants.
-   static const int does NOT qualify as a compile-time constant in C.        */
+#define TILE_SIZE 10
+#define SCREEN_W 480
+#define SCREEN_H 270
+#define MAP_COLS (SCREEN_W / TILE_SIZE)
+#define MAP_ROWS (SCREEN_H / TILE_SIZE)
 
-#define TILE_SIZE    10
-#define SCREEN_W    480
-#define SCREEN_H    270
-#define MAP_COLS    (SCREEN_W / TILE_SIZE)   /* 48 */
-#define MAP_ROWS    (SCREEN_H / TILE_SIZE)   /* 27 */
-#define JUMP_STAMINA_COST  15
-#define STAMINA 100
-#define STAMINA_FROM_FOOD 40.0f
-
-/* ── static const for everything else ───────────────────────────────────────
-   These values are only used in runtime calculations.
-   static const gives them a type, a name visible in the debugger,
-   and limits their scope to this file.                                       */
-
-static const int   PLAYER_W   = TILE_SIZE;        /* 10 px – 1 tile wide   */
-static const int   PLAYER_H   = TILE_SIZE * 3;    /* 30 px – 3 tiles tall  */
-static const int   PLAYER_SPD = 2;                /* pixels per frame      */
-static const int   PLAYER_MAX_STAMINA = 100;      /* 100 px – 10 tiles wide */
-static const int   PLAYER_STAMINA = STAMINA;      /* Current player stamina */
-static const float GRAVITY    = 0.4f;             /* px / frame²           */
-static const float JUMP_FORCE = -7.5f;            /* px / frame, upward    */
-static const float MAX_FALL   = 9.0f;             /* must stay < TILE_SIZE */
-static const float BAR_WIDTH = 100;
+static const int player_W = TILE_SIZE;
+static const int player_H = TILE_SIZE * 3;
+static const int player_speed = 2;
+static const float gravity = -0.4f;
+static const float jump_force = 7.5f;
+static const float max_fall = -9.0f;
 
 typedef enum {
-    TILE_EMPTY = 0,   /* air  – nothing drawn, player falls through */
-    TILE_EARTH,       /* dirt – drawn as rectangle, solid ground     */
-    TILE_FOOD
+    TILE_EMPTY = 0,
+    TILE_EARTH
 } TileType;
 
 typedef struct {
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
 
-static bool TileSolid(const GameMap *m, int col, int row)
-{
-    if (col < 0 || col >= MAP_COLS) return true;
-    if (row < 0 || row >= MAP_ROWS) return true;
-    return m->tiles[row][col] != TILE_EMPTY;
+static bool tileSolid(const GameMap* map, int col, int row) {
+    if (col < 0  || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return true;
+    return map->tiles[row][col] != TILE_EMPTY;
 }
 
-static void MapInit(GameMap *m)
-{
-    /* step 1: fill everything with air */
-    for (int r = 0; r < MAP_ROWS; r++)
-        for (int c = 0; c < MAP_COLS; c++)
-            m->tiles[r][c] = TILE_EMPTY;
-
-    /* step 2: solid floor – rows 21 to 26 */
-    int floorRow = (MAP_ROWS * 4) / 5;   /* = 21 */
-    for (int r = floorRow; r < MAP_ROWS; r++)
-        for (int c = 0; c < MAP_COLS; c++)
-            m->tiles[r][c] = TILE_EARTH;
-
-    m->tiles[20][10] = TILE_FOOD;  /* add a food tile for testing */
-}
-
-static void MapDraw(const GameMap *m)
-{
-    for (int r = 0; r < MAP_ROWS; r++)
-        for (int c = 0; c < MAP_COLS; c++) {
-            if (m->tiles[r][c] == TILE_EMPTY) continue;
-            DrawRectangle(
-                c * TILE_SIZE,
-                r * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-                DARKBROWN
-            );
-            if (m->tiles[r][c] == TILE_FOOD) {
-                DrawRectangle(
-                    c * TILE_SIZE,
-                    r * TILE_SIZE,
-                    TILE_SIZE,
-                    TILE_SIZE,
-                    BROWN
-                );
-            };
+static void mapInit(GameMap* map) {
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            map->tiles[y][x] = (y < 5 ? TILE_EARTH : TILE_EMPTY);
         }
+    }
 }
+
+static void drawMap(const GameMap* map) {
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            if (map->tiles[y][x] == TILE_EMPTY) continue;
+            DrawRectangle(x * TILE_SIZE, SCREEN_H - (y * TILE_SIZE), TILE_SIZE, TILE_SIZE, DARKBROWN);
+        }
+    }
+}
+
 
 int main(void)
 {
     // Initialization
-    const float groundY = (float)((MAP_ROWS * 4 / 5) * TILE_SIZE);   /* = 210 */
-    
-    //const int minerSpeed = 5;
-    
-    InitWindow(SCREEN_W, SCREEN_H, "Montana Tech Miner");
-    
-    Vector2 pos = {
-        (float)(SCREEN_W / 2 - PLAYER_W / 2),
-        groundY - (float)PLAYER_H
-    };
-    Vector2 vel         = { 0.0f, 0.0f };
-    int     stamina     = PLAYER_MAX_STAMINA;
-    bool    onGround    = true;
-    bool    facingRight = true;
-    
-    GameMap map;
-    MapInit(&map);
-    
-    float fillWidth = (stamina / PLAYER_MAX_STAMINA) * BAR_WIDTH;
+    const float groundY = 4 * TILE_SIZE;
+    //const float groundY    = (float)(MAP_ROWS * 4 / 5) * TILE_SIZE;
 
+    InitWindow(SCREEN_W, SCREEN_H, "Sample Game");
     SetTargetFPS(60);
+
+    GameMap map;
+    mapInit(&map);
+
+    Vector2 pos = {
+        (SCREEN_W / 2.0f) - (player_W / 2),
+        groundY
+    };
+    Vector2 vel = { 0.0f, 0.0f };
+    bool onGround = true;
+    bool facingRight = true;
+
 
     // Main game loop
     while (!WindowShouldClose())
     {
         // ── INPUT ──────────────────────────────────────────────────────────
         if (IsKeyDown(KEY_RIGHT)) {
+            vel.x = player_speed;
             facingRight = true;
-            if (stamina < JUMP_STAMINA_COST) vel.x = (float)PLAYER_SPD * 0.75f;
-            else vel.x = (float)PLAYER_SPD;
-
-        }
-        else if (IsKeyDown(KEY_LEFT))  {
+        } else if (IsKeyDown(KEY_LEFT)) {
+            vel.x = -player_speed;
             facingRight = false;
-            if (stamina < JUMP_STAMINA_COST) vel.x = -(float)PLAYER_SPD * 0.75f;
-            else vel.x = -(float)PLAYER_SPD;
+        } else {
+            vel.x = 0;
         }
         else vel.x = 0.0f;
 
-        if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) && onGround) {
+        if (IsKeyPressed(KEY_SPACE) && onGround || IsKeyPressed(KEY_UP) && onGround) {
             if (stamina >= JUMP_STAMINA_COST) {
                 stamina -= JUMP_STAMINA_COST;
                 vel.y    = JUMP_FORCE;
@@ -212,7 +165,7 @@ int main(void)
         EndDrawing();
     }
 
-    // De-Initialization
+    // Deinit
     CloseWindow();
     return 0;
 }
