@@ -15,12 +15,28 @@
 #define MAP_COLS (SCREEN_W / TILE_SIZE)
 #define MAP_ROWS (SCREEN_H / TILE_SIZE)
 
+#define PLAYER_MAX_STAMINA  100.0f
+#define STAMINA_BAR_X       15
+#define STAMINA_BAR_Y       35
+#define STAMINA_BAR_WIDTH   100
+#define STAMINA_BAR_HEIGHT  15
+#define STAMINA_FONT_SIZE   18
+
 static const int player_W = TILE_SIZE;
 static const int player_H = TILE_SIZE * 3;
 static const int player_speed = 2;
 static const float gravity = -0.4f;
 static const float jump_force = 7.5f;
 static const float max_fall = -9.0f;
+
+typedef struct
+{
+    Vector2 position;
+    Vector2 velocity;
+    bool onGround;
+    bool facingRight;
+    float stamina;
+} Player;
 
 typedef enum {
     TILE_EMPTY = 0,
@@ -53,6 +69,24 @@ static void drawMap(const GameMap* map) {
     }
 }
 
+static void DrawStaminaBar(const Player *player)
+{
+    int fill_width = (int)((player->stamina / PLAYER_MAX_STAMINA) * STAMINA_BAR_WIDTH);
+
+    // Empty Bar Background
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, DARKGRAY);
+
+    // Stamina Fill
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, fill_width, STAMINA_BAR_HEIGHT, BLUE);
+
+    // Border
+    DrawRectangleLines(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, WHITE);
+
+    // Stamina Display
+    DrawText(TextFormat("Stamina: %.1f / %.1f", player->stamina, PLAYER_MAX_STAMINA),
+    STAMINA_BAR_X, STAMINA_BAR_Y + STAMINA_BAR_HEIGHT, STAMINA_FONT_SIZE, WHITE
+    );
+}
 
 int main(void)
 {
