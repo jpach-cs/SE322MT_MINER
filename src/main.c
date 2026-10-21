@@ -15,12 +15,15 @@
 #define MAP_COLS (SCREEN_W / TILE_SIZE)
 #define MAP_ROWS (SCREEN_H / TILE_SIZE)
 
+#define JUMP_STAMINA_COST   15.0f
+#define STAMINA_FROM_FOOD   40.0f
+
 #define PLAYER_MAX_STAMINA  100.0f
-#define STAMINA_BAR_X       15
-#define STAMINA_BAR_Y       35
-#define STAMINA_BAR_WIDTH   100
-#define STAMINA_BAR_HEIGHT  15
-#define STAMINA_FONT_SIZE   18
+#define STAMINA_BAR_X       15.0f
+#define STAMINA_BAR_Y       15.0f
+#define STAMINA_BAR_WIDTH   175.0f
+#define STAMINA_BAR_HEIGHT  15.0f
+#define STAMINA_FONT_SIZE   18.0f
 
 static const int player_W = TILE_SIZE;
 static const int player_H = TILE_SIZE * 3;
@@ -29,8 +32,7 @@ static const float gravity = -0.4f;
 static const float jump_force = 7.5f;
 static const float max_fall = -9.0f;
 
-typedef struct
-{
+typedef struct {
     Vector2 position;
     Vector2 velocity;
     bool onGround;
@@ -69,8 +71,7 @@ static void drawMap(const GameMap* map) {
     }
 }
 
-static void DrawStaminaBar(const Player *player)
-{
+static void DrawStaminaBar(const Player *player) {
     int fill_width = (int)((player->stamina / PLAYER_MAX_STAMINA) * STAMINA_BAR_WIDTH);
 
     // Empty Bar Background
@@ -88,11 +89,18 @@ static void DrawStaminaBar(const Player *player)
     );
 }
 
+static void UsePlayerStamina(Player *player) {
+    player->stamina -= JUMP_STAMINA_COST;
+}
+
+static void RegenerateStaminaFromFood(Player *player) {
+    player->stamina += STAMINA_FROM_FOOD;
+}
+
 int main(void)
 {
     // Initialization
     const float groundY = 4 * TILE_SIZE;
-    //const float groundY    = (float)(MAP_ROWS * 4 / 5) * TILE_SIZE;
 
     InitWindow(SCREEN_W, SCREEN_H, "Sample Game");
     SetTargetFPS(60);
@@ -100,49 +108,55 @@ int main(void)
     GameMap map;
     mapInit(&map);
 
-    Vector2 pos = {
-        (SCREEN_W / 2.0f) - (player_W / 2),
-        groundY
+    Player player = {
+        .position = (Vector2) {(SCREEN_W / 2.0f), groundY},
+        .velocity = {0.0f, 0.0f},
+        .onGround = true,
+        .facingRight = true,
+        .stamina = PLAYER_MAX_STAMINA
     };
-    Vector2 vel = { 0.0f, 0.0f };
-    bool onGround = true;
-    bool facingRight = true;
-
 
     // Main game loop
     while (!WindowShouldClose())
     {
         // ── INPUT ──────────────────────────────────────────────────────────
-        if (IsKeyDown(KEY_RIGHT)) {
-            vel.x = player_speed;
-            facingRight = true;
-        } else if (IsKeyDown(KEY_LEFT)) {
-            vel.x = -player_speed;
-            facingRight = false;
+        // If both direction keys are placed stand still
+        if (IsKeyDown(KEY_RIGHT) && !IsKeyDown(KEY_LEFT)) {
+            player.velocity.x = player_speed * (player.stamina < JUMP_STAMINA_COST ? 0.5f : 1.0f);
+            player.facingRight = true;
+        } else if (IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_RIGHT)) {
+            player.velocity.x = -player_speed * (player.stamina < JUMP_STAMINA_COST ? 0.5f : 1.0f);
+            player.facingRight = false;
         } else {
-            vel.x = 0;
+            player.velocity.x = 0;
         }
 
         // jump only when standing on the ground
-        if (IsKeyPressed(KEY_SPACE) && onGround) {
-            vel.y = jump_force;
-            onGround = false;
+        if (IsKeyPressed(KEY_SPACE) && player.onGround) {
+            player.velocity.y = jump_force * (player.stamina < JUMP_STAMINA_COST ? 0.75 : 1.0);
+            player.onGround = false;
+            UsePlayerStamina(&player);
+        }
+
+        if (IsKeyPressed(KEY_F)) {
+            RegenerateStaminaFromFood(&player);
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
-        vel.y += gravity;
-        if (vel.y < max_fall) vel.y = max_fall;
-        pos = Vector2Add(pos, vel);
+        player.velocity.y += gravity;
+        if (player.velocity.y < max_fall) player.velocity.y = max_fall;
+        player.position = Vector2Add(player.position, player.velocity);
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
-        if (pos.y <= groundY) {
-            pos.y = groundY;
-            vel.y = 0.0f;
-            onGround        = true;
+        if (player.position.y <= groundY) {
+            player.position.y = groundY;
+            player.velocity.y = 0.0f;
+            player.onGround   = true;
         }
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
-        pos.x = Clamp(pos.x, 0, SCREEN_W - player_W);
+        player.position.x = Clamp(player.position.x, 0, SCREEN_W - player_W);
+        player.stamina = Clamp(player.stamina, 0.f, PLAYER_MAX_STAMINA);
 
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
@@ -152,8 +166,10 @@ int main(void)
         /* temporary floor */
         drawMap(&map);
 
+        DrawStaminaBar(&player);
+
         /* player placeholder – green = facing right, lime = facing left */
-        DrawRectangle((int)pos.x, (int)SCREEN_H - (pos.y + player_H), player_W, player_H, facingRight ? GREEN : LIME);
+        DrawRectangle((int)player.position.x, (int)SCREEN_H - (player.position.y + player_H), player_W, player_H, player.facingRight ? GREEN : LIME);
 
         EndDrawing();
     }
