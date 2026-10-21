@@ -8,3 +8,6 @@ bin/*.exe
 # system
 .DS_Store
 Thumbs.db
+
+.gitignore
+notes.md
