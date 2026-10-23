@@ -40,6 +40,8 @@ It compiles and runs.
 Beyond that, you are on your own.
 
 Read `notes.txt` first.
+Then read [`AGENTS.md`](AGENTS.md) for build targets, code conventions,
+the coordinate system, and the branching rules.
 Then read the code.
 Then talk to your team.
 
@@ -95,6 +97,9 @@ In the VSCode terminal (w64devkit):
 | `make`       | compile                  |
 | `make run`   | compile and run          |
 | `make clean` | remove compiled files    |
+| `make docs`  | generate UML-style docs into `docs/html/` (needs doxygen + graphviz) |
+| `make lint`  | static analysis with cppcheck |
+| `make test`  | unit tests (not implemented yet, exits 1) |
 
 Or use VSCode shortcuts:
 - `Ctrl+Shift+B` – build
@@ -118,3 +123,4 @@ drops below the cost of a jump, the player moves slower and jumps lower.
 ├───lib
 ├───resources
 └───src
+```

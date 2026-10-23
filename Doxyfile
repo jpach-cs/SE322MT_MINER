@@ -1,0 +1,41 @@
+# Doxygen configuration for Montana Tech Miner.
+# Run `make docs`; output lands in docs/html/index.html.
+# Requires doxygen and graphviz (dot) for the UML-style diagrams.
+
+PROJECT_NAME           = "Montana Tech Miner"
+PROJECT_BRIEF          = "SE322 raylib prototype"
+OUTPUT_DIRECTORY       = docs
+INPUT                  = src include readme.md AGENTS.md
+FILE_PATTERNS          = *.c *.h *.md
+USE_MDFILE_AS_MAINPAGE = readme.md
+RECURSIVE              = YES
+EXCLUDE                = include/raylib.h include/raymath.h include/rlgl.h
+
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+TYPEDEF_HIDES_STRUCT   = YES
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+
+# UML-style diagrams via graphviz
+HAVE_DOT               = YES
+UML_LOOK               = YES
+UML_LIMIT_NUM_FIELDS   = 20
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+DIRECTORY_GRAPH        = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES

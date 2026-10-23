@@ -38,7 +38,7 @@ else
     CLEAN    = $(RM) $(TARGET)
 endif
 
-.PHONY: all run clean
+.PHONY: all run clean docs lint test
 
 all: $(TARGET)
 
@@ -50,3 +50,32 @@ run: $(TARGET)
 
 clean:
 	$(CLEAN)
+
+# ── Documentation ───────────────────────────────────────────────────────────
+# UML-style struct, call and include diagrams via doxygen + graphviz.
+#   macOS:   brew install doxygen graphviz
+#   Windows: https://www.doxygen.nl/download.html + https://graphviz.org/download/
+docs:
+	@command -v doxygen >/dev/null 2>&1 || { echo "doxygen not found (install hints are in the Makefile)"; exit 1; }
+	@command -v dot     >/dev/null 2>&1 || echo "warning: graphviz 'dot' not found, diagrams will be skipped"
+	doxygen Doxyfile
+	@echo "docs written to docs/html/index.html"
+
+# ── Lint ────────────────────────────────────────────────────────────────────
+# Static analysis with cppcheck. Fails the build on any finding.
+#   macOS:   brew install cppcheck
+#   Windows: https://cppcheck.sourceforge.io/
+lint:
+	@command -v cppcheck >/dev/null 2>&1 || { echo "cppcheck not found (install hints are in the Makefile)"; exit 1; }
+	cppcheck --std=c99 --enable=warning,style,performance,portability \
+	         --error-exitcode=1 --inline-suppr --quiet \
+	         --suppress=missingIncludeSystem \
+	         --suppress='*:*raylib.h' --suppress='*:*raymath.h' --suppress='*:*rlgl.h' \
+	         $(INCLUDES) --library=std $(SRC)
+
+# ── Tests ───────────────────────────────────────────────────────────────────
+# Placeholder until a unit test harness exists. Exits non-zero so CI cannot
+# accidentally treat "no tests" as "tests passed".
+test:
+	@echo "TODO: implement unit tests (see test/ once it exists)"
+	@exit 1
