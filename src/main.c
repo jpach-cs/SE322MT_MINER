@@ -15,16 +15,6 @@
 #define MAP_COLS (SCREEN_W / TILE_SIZE)
 #define MAP_ROWS (SCREEN_H / TILE_SIZE)
 
-#define JUMP_STAMINA_COST   15.0f
-#define STAMINA_FROM_FOOD   40.0f
-
-#define PLAYER_MAX_STAMINA  100.0f
-#define STAMINA_BAR_X       15.0f
-#define STAMINA_BAR_Y       15.0f
-#define STAMINA_BAR_WIDTH   175.0f
-#define STAMINA_BAR_HEIGHT  15.0f
-#define STAMINA_FONT_SIZE   18.0f
-
 static const int player_W = TILE_SIZE;
 static const int player_H = TILE_SIZE * 3;
 static const int player_speed = 2;
@@ -59,10 +49,6 @@ typedef struct {
     TileType tiles[MAP_ROWS][MAP_COLS];
 } GameMap;
 
-typedef struct {
-    float stamina;   /* current stamina value */
-} Player;
-
 static bool tileSolid(const GameMap* map, int col, int row) {
     if (col < 0  || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return true;
     return map->tiles[row][col] != TILE_EMPTY;
@@ -85,28 +71,6 @@ static void drawMap(const GameMap* map) {
     }
 }
 
-static void DrawStaminaBar(const Player *player) {
-    int fill_width = (int)((player->stamina / PLAYER_MAX_STAMINA) * STAMINA_BAR_WIDTH);
-
-    // Empty Bar Background
-    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, DARKGRAY);
-
-    // Stamina Fill
-    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, fill_width, STAMINA_BAR_HEIGHT, BLUE);
-
-    // Border
-    DrawRectangleLines(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, WHITE);
-
-    // Stamina Display
-    DrawText(TextFormat("Stamina: %.1f / %.1f", player->stamina, PLAYER_MAX_STAMINA),
-    STAMINA_BAR_X, STAMINA_BAR_Y + STAMINA_BAR_HEIGHT, STAMINA_FONT_SIZE, WHITE
-    );
-}
-
-static void UsePlayerStamina(Player *player) {
-    player->stamina -= JUMP_STAMINA_COST;
-}
-
 static void UpdatePlayerStamina(Player *p, float change) {
     if (change < 0.0f) {
         if (p->stamina > (change * -1.0f)) p->stamina += change;
@@ -117,8 +81,8 @@ static void UpdatePlayerStamina(Player *p, float change) {
     if (p->stamina > PLAYER_MAX_STAMINA) p->stamina = PLAYER_MAX_STAMINA;
 }
 
-static void RegenerateStaminaFromFood(Player *P, Vector2 pos, GameMap *M) {
-    UpdatePlayerStamina(P, STAMINA_FROM_FOOD);
+static void RegenerateStaminaFromFood(Player *p) {
+    UpdatePlayerStamina(p, STAMINA_FROM_FOOD);
 }
 
 static void drawStaminaBar(const Player *player)
@@ -147,7 +111,7 @@ int main(void)
     mapInit(&map);
 
     Player player = {
-        .position = (Vector2) {(SCREEN_W / 2.0f), groundY},
+        .position = { (SCREEN_W / 2.0f) - (player_W / 2), groundY },
         .velocity = {0.0f, 0.0f},
         .onGround = true,
         .facingRight = true,
@@ -167,20 +131,20 @@ int main(void)
         }
 
         if (IsKeyDown(KEY_RIGHT)) {
-            vel.x = player_speed * speedMultiplier;
-            facingRight = true;
+            player.velocity.x = player_speed * speedMultiplier;
+            player.facingRight = true;
         } else if (IsKeyDown(KEY_LEFT)) {
-            vel.x = -player_speed * speedMultiplier;
-            facingRight = false;
+            player.velocity.x = -player_speed * speedMultiplier;
+            player.facingRight = false;
         } else {
             player.velocity.x = 0;
         }
 
         // jump only when standing on the ground
         if (IsKeyPressed(KEY_SPACE) && player.onGround) {
-            player.velocity.y = jump_force * (player.stamina < JUMP_STAMINA_COST ? 0.75 : 1.0);
+            player.velocity.y = jump_force * jumpMultiplier;
             player.onGround = false;
-            UsePlayerStamina(&player);
+            UpdatePlayerStamina(&player, -JUMP_STAMINA_COST);
         }
 
         if (IsKeyPressed(KEY_F)) {
@@ -201,7 +165,6 @@ int main(void)
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
         player.position.x = Clamp(player.position.x, 0, SCREEN_W - player_W);
-        player.stamina = Clamp(player.stamina, 0.f, PLAYER_MAX_STAMINA);
 
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
@@ -210,8 +173,6 @@ int main(void)
 
         /* temporary floor */
         drawMap(&map);
-
-        DrawStaminaBar(&player);
 
         /* player placeholder – green = facing right, lime = facing left */
         DrawRectangle((int)player.position.x, (int)SCREEN_H - (player.position.y + player_H), player_W, player_H, player.facingRight ? GREEN : LIME);

@@ -11,3 +11,6 @@ Thumbs.db
 
 .gitignore
 notes.md
+# macOS / Linux build output
+bin/game
+bin/game.dSYM/

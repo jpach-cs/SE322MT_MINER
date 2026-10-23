@@ -62,8 +62,18 @@ How you organize yourselves is up to you.
 
 ## Requirements
 
+**Windows**
 - [w64devkit](https://github.com/skeeto/w64devkit/releases)
 - [VSCode](https://code.visualstudio.com/) + C/C++ extension
+
+**macOS**
+- Xcode Command Line Tools (`xcode-select --install`)
+- raylib via [Homebrew](https://brew.sh): `brew install raylib`
+
+The Makefile detects the platform automatically. On Windows it links the
+raylib bundled in `lib/`; on macOS it links the Homebrew raylib and the
+required system frameworks. The binary is `bin/game.exe` on Windows and
+`bin/game` on macOS/Linux.
 
 ## First Run
 
@@ -92,10 +102,11 @@ Or use VSCode shortcuts:
 
 ## Controls
 
-| Key           | Action   |
-|---------------|----------|
-| ← →           | move     |
-| Space         | jump     |
+| Key           | Action                       |
+|---------------|------------------------------|
+| ← →           | move                         |
+| Space         | jump (costs stamina)         |
+| F             | eat food (restores stamina)  |
 
 ## Project Structure
 ```text
