@@ -72,10 +72,11 @@ from those branches cannot be merged mechanically. Port the idea, not the diff.
 
 ## Branching and PRs
 
-- `main` is the course baseline. Do not target it directly.
 - Feature work goes on `alpha/feature/<topic>/<name>` or
   `beta/feature/<topic>/<name>` and is PR'd into the matching
   `*/feature/<topic>/integration` branch.
+- Integration branches are what get PR'd into `main`, once they build and
+  lint clean. Individual feature branches should not target `main` directly.
 - Keep PRs to source changes. Do **not** commit:
   - `bin/game.exe` or any binary (gitignored, but check `git status`)
   - personal tool paths in `Makefile` or `.vscode/*.json`
