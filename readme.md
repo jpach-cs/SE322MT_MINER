@@ -102,11 +102,13 @@ Or use VSCode shortcuts:
 
 ## Controls
 
-| Key           | Action                       |
-|---------------|------------------------------|
-| ← →           | move                         |
-| Space         | jump (costs stamina)         |
-| F             | eat food (restores stamina)  |
+| Key              | Action                              |
+|------------------|-------------------------------------|
+| ← → or A D       | move                                |
+| Space, ↑ or W    | jump (costs stamina)                |
+
+Walk into a yellow food tile to eat it and restore stamina. When stamina
+drops below the cost of a jump, the player moves slower and jumps lower.
 
 ## Project Structure
 ```text

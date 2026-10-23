@@ -41,8 +41,9 @@ typedef struct {
 } Player;
 
 typedef enum {
-    TILE_EMPTY = 0,
-    TILE_EARTH
+    TILE_EMPTY = 0,   /* air  - nothing drawn, player falls through */
+    TILE_EARTH,       /* dirt - solid ground                        */
+    TILE_FOOD         /* food - restores stamina when touched       */
 } TileType;
 
 typedef struct {
@@ -54,19 +55,35 @@ static bool tileSolid(const GameMap* map, int col, int row) {
     return map->tiles[row][col] != TILE_EMPTY;
 }
 
+/* Map rows count upward from the bottom of the screen (row 0 is the floor). */
+static Rectangle tileScreenRect(int col, int row) {
+    return (Rectangle){ (float)(col * TILE_SIZE), (float)(SCREEN_H - (row * TILE_SIZE)),
+                        (float)TILE_SIZE, (float)TILE_SIZE };
+}
+
+static Rectangle playerScreenRect(const Player* p) {
+    return (Rectangle){ p->position.x, SCREEN_H - (p->position.y + player_H),
+                        (float)player_W, (float)player_H };
+}
+
 static void mapInit(GameMap* map) {
     for (int y = 0; y < MAP_ROWS; y++) {
         for (int x = 0; x < MAP_COLS; x++) {
             map->tiles[y][x] = (y < 5 ? TILE_EARTH : TILE_EMPTY);
         }
     }
+
+    /* test food: two on the ground, one that needs a jump to reach */
+    map->tiles[5][8]   = TILE_FOOD;
+    map->tiles[5][40]  = TILE_FOOD;
+    map->tiles[10][24] = TILE_FOOD;
 }
 
 static void drawMap(const GameMap* map) {
     for (int y = 0; y < MAP_ROWS; y++) {
         for (int x = 0; x < MAP_COLS; x++) {
             if (map->tiles[y][x] == TILE_EMPTY) continue;
-            DrawRectangle(x * TILE_SIZE, SCREEN_H - (y * TILE_SIZE), TILE_SIZE, TILE_SIZE, DARKBROWN);
+            DrawRectangleRec(tileScreenRect(x, y), map->tiles[y][x] == TILE_FOOD ? YELLOW : DARKBROWN);
         }
     }
 }
@@ -81,8 +98,16 @@ static void UpdatePlayerStamina(Player *p, float change) {
     if (p->stamina > PLAYER_MAX_STAMINA) p->stamina = PLAYER_MAX_STAMINA;
 }
 
-static void RegenerateStaminaFromFood(Player *p) {
-    UpdatePlayerStamina(p, STAMINA_FROM_FOOD);
+static void RegenerateStaminaFromFood(Player *p, GameMap *map) {
+    Rectangle body = playerScreenRect(p);
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            if (map->tiles[y][x] != TILE_FOOD) continue;
+            if (!CheckCollisionRecs(body, tileScreenRect(x, y))) continue;
+            UpdatePlayerStamina(p, STAMINA_FROM_FOOD);
+            map->tiles[y][x] = TILE_EMPTY;   /* food is consumed */
+        }
+    }
 }
 
 static void drawStaminaBar(const Player *player)
@@ -130,10 +155,10 @@ int main(void)
             jumpMultiplier  = JUMP_PENALTY;   /* jump lower when stamina is low */
         }
 
-        if (IsKeyDown(KEY_RIGHT)) {
+        if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
             player.velocity.x = player_speed * speedMultiplier;
             player.facingRight = true;
-        } else if (IsKeyDown(KEY_LEFT)) {
+        } else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
             player.velocity.x = -player_speed * speedMultiplier;
             player.facingRight = false;
         } else {
@@ -141,14 +166,11 @@ int main(void)
         }
 
         // jump only when standing on the ground
-        if (IsKeyPressed(KEY_SPACE) && player.onGround) {
+        bool jumpPressed = IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W);
+        if (jumpPressed && player.onGround) {
             player.velocity.y = jump_force * jumpMultiplier;
             player.onGround = false;
             UpdatePlayerStamina(&player, -JUMP_STAMINA_COST);
-        }
-
-        if (IsKeyPressed(KEY_F)) {
-            RegenerateStaminaFromFood(&player);
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
@@ -166,6 +188,9 @@ int main(void)
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
         player.position.x = Clamp(player.position.x, 0, SCREEN_W - player_W);
 
+        // ── FOOD ───────────────────────────────────────────────────────────
+        RegenerateStaminaFromFood(&player, &map);
+
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
 
@@ -175,7 +200,7 @@ int main(void)
         drawMap(&map);
 
         /* player placeholder – green = facing right, lime = facing left */
-        DrawRectangle((int)player.position.x, (int)SCREEN_H - (player.position.y + player_H), player_W, player_H, player.facingRight ? GREEN : LIME);
+        DrawRectangleRec(playerScreenRect(&player), player.facingRight ? GREEN : LIME);
 
         drawStaminaBar(&player);
 
