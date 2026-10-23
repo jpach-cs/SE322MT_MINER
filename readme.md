@@ -40,6 +40,8 @@ It compiles and runs.
 Beyond that, you are on your own.
 
 Read `notes.txt` first.
+Then read [`AGENTS.md`](AGENTS.md) for build targets, code conventions,
+the coordinate system, and the branching rules.
 Then read the code.
 Then talk to your team.
 
@@ -62,8 +64,18 @@ How you organize yourselves is up to you.
 
 ## Requirements
 
+**Windows**
 - [w64devkit](https://github.com/skeeto/w64devkit/releases)
 - [VSCode](https://code.visualstudio.com/) + C/C++ extension
+
+**macOS**
+- Xcode Command Line Tools (`xcode-select --install`)
+- raylib via [Homebrew](https://brew.sh): `brew install raylib`
+
+The Makefile detects the platform automatically. On Windows it links the
+raylib bundled in `lib/`; on macOS it links the Homebrew raylib and the
+required system frameworks. The binary is `bin/game.exe` on Windows and
+`bin/game` on macOS/Linux.
 
 ## First Run
 
@@ -85,6 +97,9 @@ In the VSCode terminal (w64devkit):
 | `make`       | compile                  |
 | `make run`   | compile and run          |
 | `make clean` | remove compiled files    |
+| `make docs`  | generate UML-style docs into `docs/html/` (needs doxygen + graphviz) |
+| `make lint`  | static analysis with cppcheck |
+| `make test`  | unit tests (not implemented yet, exits 1) |
 
 Or use VSCode shortcuts:
 - `Ctrl+Shift+B` – build
@@ -92,10 +107,13 @@ Or use VSCode shortcuts:
 
 ## Controls
 
-| Key           | Action   |
-|---------------|----------|
-| ← →           | move     |
-| Space         | jump     |
+| Key              | Action                              |
+|------------------|-------------------------------------|
+| ← → or A D       | move                                |
+| Space, ↑ or W    | jump (costs stamina)                |
+
+Walk into a yellow food tile to eat it and restore stamina. When stamina
+drops below the cost of a jump, the player moves slower and jumps lower.
 
 ## Project Structure
 ```text
@@ -105,3 +123,4 @@ Or use VSCode shortcuts:
 ├───lib
 ├───resources
 └───src
+```

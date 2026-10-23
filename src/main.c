@@ -4,135 +4,210 @@
 *   Based on RayLib 2D Challenge by Hans de Ruiter
 *
 ********************************************************************************************/
-
+#define SUPPORT_CAMERA_SYSTEM       1
 #include "raylib.h"
 #include "raymath.h"
 #include <stdbool.h>
 
-bool isTextureValid(const Texture2D *texture) {
-    return texture->id > 0;
+#define TILE_SIZE 10
+#define SCREEN_W 480
+#define SCREEN_H 270
+#define MAP_COLS (SCREEN_W / TILE_SIZE)
+#define MAP_ROWS (SCREEN_H / TILE_SIZE)
+
+static const int player_W = TILE_SIZE;
+static const int player_H = TILE_SIZE * 3;
+static const int player_speed = 2;
+static const float gravity = -0.4f;
+static const float jump_force = 7.5f;
+static const float max_fall = -9.0f;
+static const float PLAYER_MAX_STAMINA = 100.0f;     /* maximum stamina value */
+static const float JUMP_STAMINA_COST = 15.0f;       /* stamina cost per jump  */        
+static const float STAMINA_FROM_FOOD = 40.0f;       /* stamina gained from food */
+static const int   STAMINA_BAR_W = 100;             /* width of stamina bar in pixels */
+static const int   STAMINA_BAR_H = 15;              /* height of stamina bar in pixels */
+static const int   STAMINA_BAR_X = 15;              /* x position of stamina bar */
+static const int   STAMINA_BAR_Y = 35;              /* y position of stamina bar */
+static const int   STAMINA_BAR_TEXT_SIZE = 18;      /* border thickness of stamina bar */
+static const float SPEED_PENALTY = 0.75f;           /* speed penalty when stamina is low */
+static const float JUMP_PENALTY = 0.5f;             /* jump penalty when stamina is low */
+
+typedef struct {
+    Vector2 position;
+    Vector2 velocity;
+    bool onGround;
+    bool facingRight;
+    float stamina;
+} Player;
+
+typedef enum {
+    TILE_EMPTY = 0,   /* air  - nothing drawn, player falls through */
+    TILE_EARTH,       /* dirt - solid ground                        */
+    TILE_FOOD         /* food - restores stamina when touched       */
+} TileType;
+
+typedef struct {
+    TileType tiles[MAP_ROWS][MAP_COLS];
+} GameMap;
+
+static bool tileSolid(const GameMap* map, int col, int row) {
+    if (col < 0  || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return true;
+    return map->tiles[row][col] != TILE_EMPTY;
+}
+
+/* Map rows count upward from the bottom of the screen (row 0 is the floor). */
+static Rectangle tileScreenRect(int col, int row) {
+    return (Rectangle){ (float)(col * TILE_SIZE), (float)(SCREEN_H - (row * TILE_SIZE)),
+                        (float)TILE_SIZE, (float)TILE_SIZE };
+}
+
+static Rectangle playerScreenRect(const Player* p) {
+    return (Rectangle){ p->position.x, SCREEN_H - (p->position.y + player_H),
+                        (float)player_W, (float)player_H };
+}
+
+static void mapInit(GameMap* map) {
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            map->tiles[y][x] = (y < 5 ? TILE_EARTH : TILE_EMPTY);
+        }
+    }
+
+    /* test food: two on the ground, one that needs a jump to reach */
+    map->tiles[5][8]   = TILE_FOOD;
+    map->tiles[5][40]  = TILE_FOOD;
+    map->tiles[10][24] = TILE_FOOD;
+}
+
+static void drawMap(const GameMap* map) {
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            if (map->tiles[y][x] == TILE_EMPTY) continue;
+            DrawRectangleRec(tileScreenRect(x, y), map->tiles[y][x] == TILE_FOOD ? YELLOW : DARKBROWN);
+        }
+    }
+}
+
+static void UpdatePlayerStamina(Player *p, float change) {
+    if (change < 0.0f) {
+        if (p->stamina > (change * -1.0f)) p->stamina += change;
+    } else {
+        p->stamina += change;
+    }
+
+    if (p->stamina > PLAYER_MAX_STAMINA) p->stamina = PLAYER_MAX_STAMINA;
+}
+
+static void RegenerateStaminaFromFood(Player *p, GameMap *map) {
+    Rectangle body = playerScreenRect(p);
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            if (map->tiles[y][x] != TILE_FOOD) continue;
+            if (!CheckCollisionRecs(body, tileScreenRect(x, y))) continue;
+            UpdatePlayerStamina(p, STAMINA_FROM_FOOD);
+            map->tiles[y][x] = TILE_EMPTY;   /* food is consumed */
+        }
+    }
+}
+
+static void drawStaminaBar(const Player *player)
+{
+    float fill_width = (player->stamina / PLAYER_MAX_STAMINA) * STAMINA_BAR_W;
+
+    //Create stamina bar background
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_W, STAMINA_BAR_H, DARKGRAY);
+    // Create dynamic fill bar (on top of background)
+    DrawRectangle(STAMINA_BAR_X, STAMINA_BAR_Y, fill_width, STAMINA_BAR_H, BLUE);
+    // Create border around stamina bar (1px thick)
+    DrawRectangleLines(STAMINA_BAR_X, STAMINA_BAR_Y, STAMINA_BAR_W, STAMINA_BAR_H, WHITE);
+
+    DrawText(TextFormat("stamina: %.0f / %.0f", player->stamina, PLAYER_MAX_STAMINA), STAMINA_BAR_X, STAMINA_BAR_Y + 20, STAMINA_BAR_TEXT_SIZE, WHITE);
 }
 
 int main(void)
 {
     // Initialization
-    const int screenWidth  = 800;
-    const int screenHeight = 450;
+    const float groundY = 4 * TILE_SIZE;
 
-    const int   minerSpeed = 5;
-    const float gravity    = 0.5f;
-    const float jumpForce  = -12.0f;
-    const float groundY    = screenHeight - 80.0f;  // top edge of the floor
-
-    InitWindow(screenWidth, screenHeight, "Montana Tech Miner");
-
-    const char *filename = "resources\\miner_walk.PNG"; // check "resources\\thomas.PNG"
-    Texture2D miner = LoadTexture(filename);
-    if (!isTextureValid(&miner)) {
-        while (!WindowShouldClose()) {
-            BeginDrawing();
-                ClearBackground(RAYWHITE);
-                DrawText(TextFormat("ERROR: Couldn't load %s.", filename),
-                         20, 20, 20, BLACK);
-            EndDrawing();
-        }
-        return 10;
-    }
-
-    unsigned numFrames  = 4; // 8 for thomas - line 29
-    int      frameWidth = miner.width / numFrames;
-    Rectangle frameRec  = { 0.0f, 0.0f, (float)frameWidth, (float)miner.height };
-
-    Vector2 minerPosition = {
-        screenWidth / 2.0f,
-        groundY - miner.height    // start standing on the ground
-    };
-    Vector2 minerVelocity = { 0.0f, 0.0f };
-    bool onGround = true;
-
-    unsigned frameDelay        = 5;
-    unsigned frameDelayCounter = 0;
-    unsigned frameIndex        = 0;
-
+    InitWindow(SCREEN_W, SCREEN_H, "Sample Game");
     SetTargetFPS(60);
+
+    GameMap map;
+    mapInit(&map);
+
+    Player player = {
+        .position = { (SCREEN_W / 2.0f) - (player_W / 2), groundY },
+        .velocity = {0.0f, 0.0f},
+        .onGround = true,
+        .facingRight = true,
+        .stamina = PLAYER_MAX_STAMINA
+    };
 
     // Main game loop
     while (!WindowShouldClose())
     {
         // ── INPUT ──────────────────────────────────────────────────────────
-        if (IsKeyDown(KEY_RIGHT)) {
-            minerVelocity.x = minerSpeed;
-            if (frameRec.width < 0) frameRec.width = -frameRec.width; // face right
-        } else if (IsKeyDown(KEY_LEFT)) {
-            minerVelocity.x = -minerSpeed;
-            if (frameRec.width > 0) frameRec.width = -frameRec.width; // face left
+        float speedMultiplier = 1.0f;          /*multiplier for speed */
+        float jumpMultiplier  = 1.0f;          /*multiplier for jump height */
+
+        if (player.stamina < JUMP_STAMINA_COST) {
+            speedMultiplier = SPEED_PENALTY;  /* move slower when stamina is low */
+            jumpMultiplier  = JUMP_PENALTY;   /* jump lower when stamina is low */
+        }
+
+        if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
+            player.velocity.x = player_speed * speedMultiplier;
+            player.facingRight = true;
+        } else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
+            player.velocity.x = -player_speed * speedMultiplier;
+            player.facingRight = false;
         } else {
-            minerVelocity.x = 0;
+            player.velocity.x = 0;
         }
 
         // jump only when standing on the ground
-        if (IsKeyPressed(KEY_SPACE) && onGround) {
-            minerVelocity.y = jumpForce;
-            onGround = false;
+        bool jumpPressed = IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W);
+        if (jumpPressed && player.onGround) {
+            player.velocity.y = jump_force * jumpMultiplier;
+            player.onGround = false;
+            UpdatePlayerStamina(&player, -JUMP_STAMINA_COST);
         }
 
         // ── PHYSICS ────────────────────────────────────────────────────────
-        minerVelocity.y += gravity;
-        minerPosition    = Vector2Add(minerPosition, minerVelocity);
+        player.velocity.y += gravity;
+        if (player.velocity.y < max_fall) player.velocity.y = max_fall;
+        player.position = Vector2Add(player.position, player.velocity);
 
         // ── FLOOR COLLISION ────────────────────────────────────────────────
-        if (minerPosition.y + miner.height >= groundY) {
-            minerPosition.y = groundY - miner.height;
-            minerVelocity.y = 0.0f;
-            onGround        = true;
+        if (player.position.y <= groundY) {
+            player.position.y = groundY;
+            player.velocity.y = 0.0f;
+            player.onGround   = true;
         }
 
         // ── SCREEN BOUNDARIES ──────────────────────────────────────────────
-        if (minerPosition.x < 0)
-            minerPosition.x = 0;
-        if (minerPosition.x > screenWidth - frameWidth)
-            minerPosition.x = (float)(screenWidth - frameWidth);
+        player.position.x = Clamp(player.position.x, 0, SCREEN_W - player_W);
 
-        // ── ANIMATION ──────────────────────────────────────────────────────
-        bool minerMoving = (minerVelocity.x != 0.0f);
-
-        if (!onGround) {
-            frameIndex = 1;                    // in the air: frozen frame
-        } else {
-            ++frameDelayCounter;
-            if (frameDelayCounter > frameDelay) {
-                frameDelayCounter = 0;
-                if (minerMoving) {
-                    ++frameIndex;
-                    frameIndex %= numFrames;   // 0 → 1 → 2 → 3 → 0 ...
-                } else {
-                    frameIndex = 0;            // standing: first frame
-                }
-            }
-        }
-
-        // preserve direction (sign of frameRec.width) when changing frame
-        float dir      = (frameRec.width >= 0) ? 1.0f : -1.0f;
-        frameRec.x     = (float)frameWidth * frameIndex;
-        frameRec.width = dir * (float)frameWidth;
+        // ── FOOD ───────────────────────────────────────────────────────────
+        RegenerateStaminaFromFood(&player, &map);
 
         // ── DRAW ───────────────────────────────────────────────────────────
         BeginDrawing();
-            ClearBackground((Color){ 30, 20, 10, 255 });
 
-            // floor
-            DrawRectangle(0, (int)groundY,
-                          screenWidth, screenHeight - (int)groundY,
-                          DARKBROWN);
+        ClearBackground((Color){ 18, 10, 5, 255 });
 
-            // player
-            DrawTextureRec(miner, frameRec, minerPosition, WHITE);
+        /* temporary floor */
+        drawMap(&map);
+
+        /* player placeholder – green = facing right, lime = facing left */
+        DrawRectangleRec(playerScreenRect(&player), player.facingRight ? GREEN : LIME);
+
+        drawStaminaBar(&player);
 
         EndDrawing();
     }
 
-    // De-Initialization
-    UnloadTexture(miner);
+    // Deinit
     CloseWindow();
     return 0;
 }
