@@ -33,7 +33,8 @@ src/
     hud.hpp/.cpp             drawStaminaBar
   controller/            keys to PlayerInput
     input.hpp/.cpp       readPlayerInput
-tests/                   doctest unit tests (see Testing)
+tests/                   doctest unit tests (see Testing); test_stamina, test_tilemap,
+                         and test_player are placeholders for the model tests
 third_party/doctest.h
 docs/                    architecture documents; Doxygen output goes to docs/html/
 ```
@@ -143,6 +144,8 @@ migration. `make test` builds `bin/tests` and runs it.
   and coordinate helpers. Input handling and the movement penalties still live
   inside `main()` and cannot be unit tested until the restructure pulls them
   out.
-- When a rule moves into `src/model/`, move its tests into a matching
-  `tests/test_<module>.cpp`.
+- When a rule moves into `src/model/`, move its tests into the matching
+  placeholder (`test_stamina.cpp`, `test_tilemap.cpp`, `test_player.cpp`).
+  `make test` builds every `tests/*.cpp`, so new test files need no Makefile
+  change.
 - CI builds raylib 6.0 from source (matching `include/`) and caches it.

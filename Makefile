@@ -5,7 +5,7 @@ SRC      = src/main.c
 # Unit tests are C++ (doctest), ahead of the C++ migration.
 CXX      = c++
 CXXFLAGS = -Wall -Wextra -std=c++20 -g
-TEST_SRC = tests/test_main.cpp tests/test_game.cpp
+TEST_SRC = $(wildcard tests/*.cpp)
 
 # ── Platform detection ──────────────────────────────────────────────────────
 # Windows (w64devkit): uses the bundled raylib in include/ and lib/.
