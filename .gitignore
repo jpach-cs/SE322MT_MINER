@@ -16,7 +16,7 @@ bin/game
 bin/game.dSYM/
 
 # generated documentation
-docs/
+docs/html/
 
 # unit test build output
 bin/tests
