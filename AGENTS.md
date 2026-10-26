@@ -22,7 +22,7 @@ invocations:
 | `make clean`  | remove the binary and macOS `.dSYM`                               |
 | `make lint`   | cppcheck static analysis, non-zero exit on any finding            |
 | `make docs`   | doxygen + graphviz UML-style diagrams into `docs/html/`           |
-| `make test`   | placeholder, exits non-zero until a test harness exists           |
+| `make test`   | build and run the doctest unit tests in `tests/` (`bin/tests`)    |
 
 Dependencies per platform:
 
@@ -30,8 +30,8 @@ Dependencies per platform:
 - **macOS:** Xcode Command Line Tools, then `brew install raylib doxygen graphviz cppcheck`.
 - **Linux:** a system raylib (`libraylib-dev`), plus doxygen, graphviz, cppcheck.
 
-Before opening a PR, `make` and `make lint` must both pass with no new
-warnings. The one accepted warning is the unused `tileSolid` function, which
+Before opening a PR, `make`, `make lint` and `make test` must all pass with no
+new warnings. CI runs `make lint` and `make test` on every push. The one accepted warning is the unused `tileSolid` function, which
 is reserved for future tile collision.
 
 ## Code conventions
@@ -98,8 +98,19 @@ from those branches cannot be merged mechanically. Port the idea, not the diff.
 
 ## Testing
 
-There is no unit test harness yet. `make test` exits non-zero on purpose so
-CI cannot mistake "no tests" for "tests passed". When adding one, the
-pure-logic functions (`UpdatePlayerStamina`, `RegenerateStaminaFromFood`,
-`mapInit`) can be exercised by including `main.c` with `main` renamed via
-`#define main game_main`; they do not need a window.
+Unit tests use [doctest](https://github.com/doctest/doctest) (single header,
+vendored at `third_party/doctest.h`) and are C++20, ahead of the C++
+migration. `make test` builds `bin/tests` and runs it.
+
+- `tests/test_main.cpp` is only the doctest entry point.
+- `tests/test_game.cpp` compiles `src/main.c` in with `main` renamed to
+  `game_main`, so the rules can be called without opening a window. Only that
+  one file may include `main.c`; a second copy would duplicate `game_main` at
+  link time.
+- Test only functions that do not need a window: the stamina, food, tilemap
+  and coordinate helpers. Input handling and the movement penalties still live
+  inside `main()` and cannot be unit tested until the restructure pulls them
+  out.
+- When a rule moves into `src/model/`, move its tests into a matching
+  `tests/test_<module>.cpp`.
+- CI builds raylib 6.0 from source (matching `include/`) and caches it.
