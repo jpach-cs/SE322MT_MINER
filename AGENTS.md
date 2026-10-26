@@ -48,15 +48,17 @@ View and Controller may use the Model, never the reverse.
 The Makefile detects the platform. Use these targets, not ad-hoc compiler
 invocations:
 
-| Target          | What it does                                                       |
-|-----------------|--------------------------------------------------------------------|
-| `make`          | compile to `bin/game` (macOS/Linux) or `bin/game.exe` (Windows)    |
-| `make run`      | compile and launch                                                 |
-| `make clean`    | remove the binary and macOS `.dSYM`                                |
-| `make lint`     | cppcheck static analysis, non-zero exit on any finding             |
-| `make docs`     | doxygen + graphviz UML-style diagrams into `docs/html/`            |
-| `make test`     | build and run the doctest unit tests in `tests/` (`bin/tests`)     |
-| `make coverage` | tests with coverage, report in `coverage/`, then the coverage gate |
+| Target             | What it does                                                       |
+|--------------------|--------------------------------------------------------------------|
+| `make`             | compile to `bin/game` (macOS/Linux) or `bin/game.exe` (Windows)    |
+| `make run`         | compile and launch                                                 |
+| `make clean`       | remove the binary and macOS `.dSYM`                                |
+| `make lint`        | cppcheck static analysis, non-zero exit on any finding             |
+| `make docs`        | doxygen + graphviz UML-style diagrams into `docs/html/`            |
+| `make test`        | build and run the doctest unit tests in `tests/` (`bin/tests`)     |
+| `make coverage`    | tests with coverage, report in `coverage/`, then the coverage gate |
+| `make lint-python` | pylint on `scripts/`, must score 10/10                             |
+| `make test-python` | pytest for `scripts/`, at least 90% coverage                       |
 
 Dependencies per platform:
 
@@ -169,3 +171,8 @@ Then `scripts/coverage_gate.py` decides:
 
 Coverage is low today because the game loop and drawing live in `main()`.
 Moving logic out of `main()` into tested model code is how it goes up.
+
+The gate itself is held to the same bar: `make lint-python` requires pylint
+10/10 and `make test-python` requires 90% coverage of `coverage_gate.py`
+(tests in `scripts/tests/`, run against throwaway git repos). Install with
+`pip install pylint==4.1.3 pytest==9.1.1 pytest-cov==7.1.0`.

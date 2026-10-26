@@ -25,3 +25,8 @@ bin/tests.dSYM/
 # coverage build output and report
 bin/coverage/
 coverage/
+
+# Python tooling
+__pycache__/
+.pytest_cache/
+.coverage
