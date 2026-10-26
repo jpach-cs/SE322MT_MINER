@@ -10,6 +10,38 @@ A 2D platformer prototype for Montana Tech SE322, written in C99 against
 `src/main.c`. Headers and a prebuilt Windows raylib are vendored under
 `include/` and `lib/`.
 
+## Layout (C++ restructure in progress)
+
+The game is moving from C to C++ in a Model / View / Controller layout. The
+target is `sugestions.md` in `jpach-cs/esof-322_miner_decription`; the design
+will be `docs/architecture.md`. The files below exist as placeholders, each
+with a comment saying which part of `main.c` moves into it.
+
+```text
+src/
+  main.c                 the game today; still what `make` builds
+  main.cpp               future entry point: window, render target, loop
+  model/                 state and rules, no raylib (make lint enforces this)
+    config.hpp           constexpr constants
+    stamina.hpp/.cpp     jump cost, regeneration, clamping, penalties
+    tilemap.hpp/.cpp     TileType, isSolidAt, spawnPoint
+    player_input.hpp     what the player wants to do this frame
+    player.hpp/.cpp      player state and per-frame update
+  view/                  drawing, may read the Model
+    player_sprite.hpp/.cpp   textures and animation
+    world_view.hpp/.cpp      drawWorld, tile colors
+    hud.hpp/.cpp             drawStaminaBar
+  controller/            keys to PlayerInput
+    input.hpp/.cpp       readPlayerInput
+tests/                   doctest unit tests (see Testing)
+third_party/doctest.h
+docs/                    architecture documents; Doxygen output goes to docs/html/
+```
+
+Move one piece at a time, with its tests, and keep `make test` green at every
+step: the restructure must not change behavior. Dependencies point one way:
+View and Controller may use the Model, never the reverse.
+
 ## Build, run, check
 
 The Makefile detects the platform. Use these targets, not ad-hoc compiler

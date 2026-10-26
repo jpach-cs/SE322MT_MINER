@@ -73,7 +73,11 @@ docs:
 # Static analysis with cppcheck. Fails the build on any finding.
 #   macOS:   brew install cppcheck
 #   Windows: https://cppcheck.sourceforge.io/
+# The Model must stay testable without a window, so nothing under src/model/
+# may include raylib (phase06 ground rules).
 lint:
+	@if grep -rnE '^[[:space:]]*#[[:space:]]*include[[:space:]]*[<"](raylib|raymath|rlgl)' src/model; then \
+	    echo "src/model must not include raylib"; exit 1; fi
 	@command -v cppcheck >/dev/null 2>&1 || { echo "cppcheck not found (install hints are in the Makefile)"; exit 1; }
 	cppcheck --std=c99 --enable=warning,style,performance,portability \
 	         --error-exitcode=1 --inline-suppr --quiet \
