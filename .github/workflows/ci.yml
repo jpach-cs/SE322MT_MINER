@@ -26,7 +26,7 @@ jobs:
         run: make lint
 
   pylint:
-    name: "lint: make lint-python"
+    name: "lint: pylint"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,8 +38,8 @@ jobs:
       - name: Install Python tools
         run: pip install pylint==4.1.3
 
-      - name: Run make lint-python (pylint must score 10/10)
-        run: make lint-python
+      - name: pylint scripts/ (must score 10/10)
+        run: PYTHONPATH=scripts:scripts/tests pylint --fail-under=10 scripts/coverage_gate.py scripts/tests/*.py
 
   # ── Stage 2: test ───────────────────────────────────────────────────────
   test:
@@ -95,7 +95,7 @@ jobs:
           if-no-files-found: ignore
 
   pytest:
-    name: "test: make test-python"
+    name: "test: pytest"
     needs: [cppcheck, pylint]
     runs-on: ubuntu-latest
     steps:
@@ -108,5 +108,7 @@ jobs:
       - name: Install Python tools
         run: pip install pytest==9.1.1 pytest-cov==7.1.0
 
-      - name: Run make test-python (at least 90% coverage of the gate)
-        run: make test-python
+      - name: pytest scripts/ (at least 90% coverage of the gate)
+        run: >
+          python -m pytest scripts/tests -q --cov=coverage_gate
+          --cov-report=term-missing --cov-fail-under=90

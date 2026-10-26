@@ -48,7 +48,7 @@ else
     GCOV     = gcov
 endif
 
-.PHONY: all run clean docs lint test coverage coverage-report lint-python test-python
+.PHONY: all run clean docs lint test coverage coverage-report
 
 all: $(TARGET)
 
@@ -127,17 +127,3 @@ coverage: coverage-report
 	python3 scripts/coverage_gate.py --summary coverage/summary.json --minimum $(COVERAGE_MIN) \
 	        --base $(COVERAGE_BASE) --make "$(MAKE)" --watch src tests \
 	        --make-var CC="$(CC)" --make-var CXX="$(CXX)"
-
-# ── Python tooling ──────────────────────────────────────────────────────────
-# The coverage gate is held to the standard it enforces: pylint must score
-# 10/10, and its tests must cover at least 90% of it.
-#   pip install pylint==4.1.3 pytest==9.1.1 pytest-cov==7.1.0
-PYTHON = python3
-
-lint-python:
-	PYTHONPATH=scripts:scripts/tests $(PYTHON) -m pylint --fail-under=10 \
-	    scripts/coverage_gate.py scripts/tests/*.py
-
-test-python:
-	MAKE="$(MAKE)" $(PYTHON) -m pytest scripts/tests -q --cov=coverage_gate \
-	    --cov-report=term-missing --cov-fail-under=90
