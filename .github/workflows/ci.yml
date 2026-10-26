@@ -6,9 +6,12 @@ on:
   push:
     branches: ["**"]
 
+# Two stages. Lint runs first and is cheap; test (which builds raylib and the
+# coverage build) only starts once both lint jobs pass.
 jobs:
+  # ── Stage 1: lint ───────────────────────────────────────────────────────
   cppcheck:
-    name: make lint
+    name: "lint: make lint"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,8 +25,26 @@ jobs:
       - name: Run make lint
         run: make lint
 
+  pylint:
+    name: "lint: make lint-python"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install Python tools
+        run: pip install pylint==4.1.3
+
+      - name: Run make lint-python (pylint must score 10/10)
+        run: make lint-python
+
+  # ── Stage 2: test ───────────────────────────────────────────────────────
   test:
-    name: make test
+    name: "test: make test and make coverage"
+    needs: [cppcheck, pylint]
     runs-on: ubuntu-latest
     env:
       # Matches the headers vendored in include/.
@@ -73,8 +94,9 @@ jobs:
           path: coverage/
           if-no-files-found: ignore
 
-  python:
-    name: pylint and pytest
+  pytest:
+    name: "test: make test-python"
+    needs: [cppcheck, pylint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,10 +106,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install Python tools
-        run: pip install pylint==4.1.3 pytest==9.1.1 pytest-cov==7.1.0
-
-      - name: Run make lint-python (pylint must score 10/10)
-        run: make lint-python
+        run: pip install pytest==9.1.1 pytest-cov==7.1.0
 
       - name: Run make test-python (at least 90% coverage of the gate)
         run: make test-python
