@@ -1,9 +1,10 @@
 name: ci
 
+# Push only: every PR here comes from a branch in this repo, so its pushes
+# already run CI. Also triggering on pull_request ran every job twice.
 on:
   push:
     branches: ["**"]
-  pull_request:
 
 jobs:
   cppcheck:
