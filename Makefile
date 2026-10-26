@@ -2,6 +2,11 @@ CC       = gcc
 CFLAGS   = -Wall -Wextra -std=c99 -g
 SRC      = src/main.c
 
+# Unit tests are C++ (doctest), ahead of the C++ migration.
+CXX      = c++
+CXXFLAGS = -Wall -Wextra -std=c++20 -g
+TEST_SRC = tests/test_main.cpp tests/test_game.cpp
+
 # ── Platform detection ──────────────────────────────────────────────────────
 # Windows (w64devkit): uses the bundled raylib in include/ and lib/.
 # macOS: uses raylib from Homebrew (`brew install raylib`).
@@ -16,9 +21,10 @@ ifeq ($(PLATFORM),windows)
     INCLUDES = -Iinclude
     LIBS     = -Llib -lraylib -lopengl32 -lgdi32 -lwinmm
     TARGET   = bin/game.exe
+    TEST_BIN = bin/tests.exe
     RM       = del /q
     RUN      = $(TARGET)
-    CLEAN    = del bin\game.exe
+    CLEAN    = del bin\game.exe bin\tests.exe
 else ifeq ($(PLATFORM),Darwin)
     BREW_PREFIX ?= $(shell brew --prefix raylib 2>/dev/null || echo /opt/homebrew/opt/raylib)
     INCLUDES = -I$(BREW_PREFIX)/include
@@ -26,16 +32,18 @@ else ifeq ($(PLATFORM),Darwin)
                -framework CoreVideo -framework IOKit -framework Cocoa \
                -framework GLUT -framework OpenGL
     TARGET   = bin/game
+    TEST_BIN = bin/tests
     RM       = rm -f
     RUN      = ./$(TARGET)
-    CLEAN    = $(RM) $(TARGET) && $(RM) -r $(TARGET).dSYM
+    CLEAN    = $(RM) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM
 else
     INCLUDES = -Iinclude
     LIBS     = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
     TARGET   = bin/game
+    TEST_BIN = bin/tests
     RM       = rm -f
     RUN      = ./$(TARGET)
-    CLEAN    = $(RM) $(TARGET)
+    CLEAN    = $(RM) $(TARGET) $(TEST_BIN)
 endif
 
 .PHONY: all run clean docs lint test
@@ -74,8 +82,13 @@ lint:
 	         $(INCLUDES) --library=std $(SRC)
 
 # ── Tests ───────────────────────────────────────────────────────────────────
-# Placeholder until a unit test harness exists. Exits non-zero so CI cannot
-# accidentally treat "no tests" as "tests passed".
-test:
-	@echo "TODO: implement unit tests (see test/ once it exists)"
-	@exit 1
+# doctest unit tests for the game rules. tests/test_game.cpp compiles
+# src/main.c in with main() renamed, so no window opens. raylib headers are
+# passed as -isystem so warnings inside them do not drown out ours.
+TEST_INCLUDES = -Ithird_party $(patsubst -I%,-isystem %,$(INCLUDES))
+
+$(TEST_BIN): $(TEST_SRC) $(SRC) third_party/doctest.h
+	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) $(TEST_SRC) -o $(TEST_BIN) $(LIBS)
+
+test: $(TEST_BIN)
+	./$(TEST_BIN)

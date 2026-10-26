@@ -17,3 +17,7 @@ bin/game.dSYM/
 
 # generated documentation
 docs/
+
+# unit test build output
+bin/tests
+bin/tests.dSYM/
