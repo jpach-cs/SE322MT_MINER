@@ -10,28 +10,62 @@ A 2D platformer prototype for Montana Tech SE322, written in C99 against
 `src/main.c`. Headers and a prebuilt Windows raylib are vendored under
 `include/` and `lib/`.
 
+## Layout (C++ restructure in progress)
+
+The game is moving from C to C++ in a Model / View / Controller layout. The
+target is `sugestions.md` in `jpach-cs/esof-322_miner_decription`; the design
+will be `docs/architecture.md`. The files below exist as placeholders, each
+with a comment saying which part of `main.c` moves into it.
+
+```text
+src/
+  main.c                 the game today; still what `make` builds
+  main.cpp               future entry point: window, render target, loop
+  model/                 state and rules, no raylib (make lint enforces this)
+    config.hpp           constexpr constants
+    stamina.hpp/.cpp     jump cost, regeneration, clamping, penalties
+    tilemap.hpp/.cpp     TileType, isSolidAt, spawnPoint
+    player_input.hpp     what the player wants to do this frame
+    player.hpp/.cpp      player state and per-frame update
+  view/                  drawing, may read the Model
+    player_sprite.hpp/.cpp   textures and animation
+    world_view.hpp/.cpp      drawWorld, tile colors
+    hud.hpp/.cpp             drawStaminaBar
+  controller/            keys to PlayerInput
+    input.hpp/.cpp       readPlayerInput
+tests/                   doctest unit tests (see Testing); one placeholder
+                         test_<module>.cpp per module that will be tested
+third_party/doctest.h
+docs/                    architecture documents; Doxygen output goes to docs/html/
+```
+
+Move one piece at a time, with its tests, and keep `make test` green at every
+step: the restructure must not change behavior. Dependencies point one way:
+View and Controller may use the Model, never the reverse.
+
 ## Build, run, check
 
 The Makefile detects the platform. Use these targets, not ad-hoc compiler
 invocations:
 
-| Target        | What it does                                                      |
-|---------------|-------------------------------------------------------------------|
-| `make`        | compile to `bin/game` (macOS/Linux) or `bin/game.exe` (Windows)   |
-| `make run`    | compile and launch                                                |
-| `make clean`  | remove the binary and macOS `.dSYM`                               |
-| `make lint`   | cppcheck static analysis, non-zero exit on any finding            |
-| `make docs`   | doxygen + graphviz UML-style diagrams into `docs/html/`           |
-| `make test`   | placeholder, exits non-zero until a test harness exists           |
+| Target          | What it does                                                       |
+|-----------------|--------------------------------------------------------------------|
+| `make`          | compile to `bin/game` (macOS/Linux) or `bin/game.exe` (Windows)    |
+| `make run`      | compile and launch                                                 |
+| `make clean`    | remove the binary and macOS `.dSYM`                                |
+| `make lint`     | cppcheck static analysis, non-zero exit on any finding             |
+| `make docs`     | doxygen + graphviz UML-style diagrams into `docs/html/`            |
+| `make test`     | build and run the doctest unit tests in `tests/` (`bin/tests`)     |
+| `make coverage` | tests with coverage, report in `coverage/`, then the coverage gate |
 
 Dependencies per platform:
 
 - **Windows:** [w64devkit](https://github.com/skeeto/w64devkit/releases). raylib is vendored.
-- **macOS:** Xcode Command Line Tools, then `brew install raylib doxygen graphviz cppcheck`.
+- **macOS:** Xcode Command Line Tools, then `brew install raylib doxygen graphviz cppcheck gcovr`.
 - **Linux:** a system raylib (`libraylib-dev`), plus doxygen, graphviz, cppcheck.
 
-Before opening a PR, `make` and `make lint` must both pass with no new
-warnings. The one accepted warning is the unused `tileSolid` function, which
+Before opening a PR, `make`, `make lint`, `make test` and `make coverage` must
+all pass with no new warnings. CI runs all of them on every push. The one accepted warning is the unused `tileSolid` function, which
 is reserved for future tile collision.
 
 ## Code conventions
@@ -98,8 +132,45 @@ from those branches cannot be merged mechanically. Port the idea, not the diff.
 
 ## Testing
 
-There is no unit test harness yet. `make test` exits non-zero on purpose so
-CI cannot mistake "no tests" for "tests passed". When adding one, the
-pure-logic functions (`UpdatePlayerStamina`, `RegenerateStaminaFromFood`,
-`mapInit`) can be exercised by including `main.c` with `main` renamed via
-`#define main game_main`; they do not need a window.
+Unit tests use [doctest](https://github.com/doctest/doctest) (single header,
+vendored at `third_party/doctest.h`) and are C++20, ahead of the C++
+migration. `make test` builds `bin/tests` and runs it.
+
+- `tests/test_main.cpp` is only the doctest entry point.
+- `tests/test_game.cpp` compiles `src/main.c` in with `main` renamed to
+  `game_main`, so the rules can be called without opening a window. Only that
+  one file may include `main.c`; a second copy would duplicate `game_main` at
+  link time.
+- Test only functions that do not need a window: the stamina, food, tilemap
+  and coordinate helpers. Input handling and the movement penalties still live
+  inside `main()` and cannot be unit tested until the restructure pulls them
+  out.
+- When code moves into `src/model/` or `src/controller/`, move its tests into
+  the matching placeholder: `test_config`, `test_stamina`, `test_tilemap`,
+  `test_player_input`, `test_player`, or `test_input` (`.cpp`). `make test`
+  builds every `tests/*.cpp`, so new test files need no Makefile change.
+- View code only draws, so it has no unit test placeholders. Pull any pure
+  calculation (for example the stamina bar's fill width) into a function and
+  test that.
+- CI builds raylib 6.0 from source (matching `include/`) and caches it.
+
+### Coverage rule
+
+`make coverage` measures line coverage of `src/` with gcovr and writes
+`coverage/index.html` (CI uploads it as the `coverage-report` artifact).
+Then `scripts/coverage_gate.py` decides:
+
+- **90% or more:** pass.
+- **Below 90%:** the branch must have *higher* coverage than `main`, measured
+  in a temporary worktree. Equal is a failure. Every PR that touches code has
+  to leave coverage higher than it found it until the target is reached.
+- **No changes under `src/` or `tests/`** (docs-only branches), or `main`
+  itself: report only, no gate.
+
+Coverage is low today because the game loop and drawing live in `main()`.
+Moving logic out of `main()` into tested model code is how it goes up.
+
+The gate itself is held to the same bar, in CI only since it is tooling, not
+game code: pylint must score 10/10 and its tests (`scripts/tests/`, run
+against throwaway git repos) must cover 90% of `coverage_gate.py`. To run them
+locally, see the `pylint` and `pytest` jobs in `.github/workflows/ci.yml`.

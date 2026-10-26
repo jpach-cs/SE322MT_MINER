@@ -90,7 +90,7 @@ static void drawMap(const GameMap* map) {
 
 static void UpdatePlayerStamina(Player *p, float change) {
     if (change < 0.0f) {
-        if (p->stamina > (change * -1.0f)) p->stamina += change;
+        if (p->stamina >= (change * -1.0f)) p->stamina += change;
     } else {
         p->stamina += change;
     }

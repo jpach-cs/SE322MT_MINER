@@ -1,0 +1,115 @@
+name: ci
+
+# Push only: every PR here comes from a branch in this repo, so its pushes
+# already run CI. Also triggering on pull_request ran every job twice.
+on:
+  push:
+    branches: ["**"]
+
+# Two stages. Lint runs first and is cheap; test (which builds raylib and the
+# coverage build) only starts once both lint jobs pass.
+jobs:
+  # ── Stage 1: lint ───────────────────────────────────────────────────────
+  cppcheck:
+    name: "lint: make lint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cppcheck
+          cppcheck --version
+
+      - name: Run make lint
+        run: make lint
+
+  pylint:
+    name: "lint: pylint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install Python tools
+        # pytest too: pylint checks the test files' imports.
+        run: pip install pylint==4.1.3 pytest==9.1.1
+
+      - name: pylint scripts/ (must score 10/10)
+        run: PYTHONPATH=scripts:scripts/tests pylint --fail-under=10 scripts/coverage_gate.py scripts/tests/*.py
+
+  # ── Stage 2: test ───────────────────────────────────────────────────────
+  test:
+    name: "test: make test and make coverage"
+    needs: [cppcheck, pylint]
+    runs-on: ubuntu-latest
+    env:
+      # Matches the headers vendored in include/.
+      RAYLIB_VERSION: "6.0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The coverage gate checks out origin/main to measure its coverage.
+          fetch-depth: 0
+
+      - name: Install raylib build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake libgl1-mesa-dev libx11-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libasound2-dev
+
+      - name: Cache raylib
+        id: raylib-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/raylib
+          key: raylib-${{ env.RAYLIB_VERSION }}-${{ runner.os }}
+
+      - name: Build raylib
+        if: steps.raylib-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$RAYLIB_VERSION" https://github.com/raysan5/raylib.git /tmp/raylib-src
+          cmake -S /tmp/raylib-src -B /tmp/raylib-build -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_EXAMPLES=OFF -DGLFW_BUILD_WAYLAND=OFF -DCMAKE_INSTALL_PREFIX="$HOME/raylib"
+          cmake --build /tmp/raylib-build -j
+          cmake --install /tmp/raylib-build
+
+      - name: Run make test
+        run: LIBRARY_PATH="$HOME/raylib/lib" make test
+
+      - name: Install gcovr
+        run: pip install gcovr==8.7
+
+      - name: Run make coverage (below 90%, the branch must beat main)
+        run: LIBRARY_PATH="$HOME/raylib/lib" make coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+
+  pytest:
+    name: "test: pytest"
+    needs: [cppcheck, pylint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install Python tools
+        run: pip install pytest==9.1.1 pytest-cov==7.1.0
+
+      - name: pytest scripts/ (at least 90% coverage of the gate)
+        run: >
+          python -m pytest scripts/tests -q --cov=coverage_gate
+          --cov-report=term-missing --cov-fail-under=90

@@ -16,4 +16,17 @@ bin/game
 bin/game.dSYM/
 
 # generated documentation
-docs/
+docs/html/
+
+# unit test build output
+bin/tests
+bin/tests.dSYM/
+
+# coverage build output and report
+bin/coverage/
+coverage/
+
+# Python tooling
+__pycache__/
+.pytest_cache/
+.coverage
