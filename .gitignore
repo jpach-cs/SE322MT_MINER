@@ -21,3 +21,7 @@ docs/html/
 # unit test build output
 bin/tests
 bin/tests.dSYM/
+
+# coverage build output and report
+bin/coverage/
+coverage/

@@ -33,8 +33,8 @@ src/
     hud.hpp/.cpp             drawStaminaBar
   controller/            keys to PlayerInput
     input.hpp/.cpp       readPlayerInput
-tests/                   doctest unit tests (see Testing); test_stamina, test_tilemap,
-                         and test_player are placeholders for the model tests
+tests/                   doctest unit tests (see Testing); one placeholder
+                         test_<module>.cpp per module that will be tested
 third_party/doctest.h
 docs/                    architecture documents; Doxygen output goes to docs/html/
 ```
@@ -48,23 +48,24 @@ View and Controller may use the Model, never the reverse.
 The Makefile detects the platform. Use these targets, not ad-hoc compiler
 invocations:
 
-| Target        | What it does                                                      |
-|---------------|-------------------------------------------------------------------|
-| `make`        | compile to `bin/game` (macOS/Linux) or `bin/game.exe` (Windows)   |
-| `make run`    | compile and launch                                                |
-| `make clean`  | remove the binary and macOS `.dSYM`                               |
-| `make lint`   | cppcheck static analysis, non-zero exit on any finding            |
-| `make docs`   | doxygen + graphviz UML-style diagrams into `docs/html/`           |
-| `make test`   | build and run the doctest unit tests in `tests/` (`bin/tests`)    |
+| Target          | What it does                                                       |
+|-----------------|--------------------------------------------------------------------|
+| `make`          | compile to `bin/game` (macOS/Linux) or `bin/game.exe` (Windows)    |
+| `make run`      | compile and launch                                                 |
+| `make clean`    | remove the binary and macOS `.dSYM`                                |
+| `make lint`     | cppcheck static analysis, non-zero exit on any finding             |
+| `make docs`     | doxygen + graphviz UML-style diagrams into `docs/html/`            |
+| `make test`     | build and run the doctest unit tests in `tests/` (`bin/tests`)     |
+| `make coverage` | tests with coverage, report in `coverage/`, then the coverage gate |
 
 Dependencies per platform:
 
 - **Windows:** [w64devkit](https://github.com/skeeto/w64devkit/releases). raylib is vendored.
-- **macOS:** Xcode Command Line Tools, then `brew install raylib doxygen graphviz cppcheck`.
+- **macOS:** Xcode Command Line Tools, then `brew install raylib doxygen graphviz cppcheck gcovr`.
 - **Linux:** a system raylib (`libraylib-dev`), plus doxygen, graphviz, cppcheck.
 
-Before opening a PR, `make`, `make lint` and `make test` must all pass with no
-new warnings. CI runs `make lint` and `make test` on every push. The one accepted warning is the unused `tileSolid` function, which
+Before opening a PR, `make`, `make lint`, `make test` and `make coverage` must
+all pass with no new warnings. CI runs all of them on every push. The one accepted warning is the unused `tileSolid` function, which
 is reserved for future tile collision.
 
 ## Code conventions
@@ -144,8 +145,27 @@ migration. `make test` builds `bin/tests` and runs it.
   and coordinate helpers. Input handling and the movement penalties still live
   inside `main()` and cannot be unit tested until the restructure pulls them
   out.
-- When a rule moves into `src/model/`, move its tests into the matching
-  placeholder (`test_stamina.cpp`, `test_tilemap.cpp`, `test_player.cpp`).
-  `make test` builds every `tests/*.cpp`, so new test files need no Makefile
-  change.
+- When code moves into `src/model/` or `src/controller/`, move its tests into
+  the matching placeholder: `test_config`, `test_stamina`, `test_tilemap`,
+  `test_player_input`, `test_player`, or `test_input` (`.cpp`). `make test`
+  builds every `tests/*.cpp`, so new test files need no Makefile change.
+- View code only draws, so it has no unit test placeholders. Pull any pure
+  calculation (for example the stamina bar's fill width) into a function and
+  test that.
 - CI builds raylib 6.0 from source (matching `include/`) and caches it.
+
+### Coverage rule
+
+`make coverage` measures line coverage of `src/` with gcovr and writes
+`coverage/index.html` (CI uploads it as the `coverage-report` artifact).
+Then `scripts/coverage_gate.py` decides:
+
+- **90% or more:** pass.
+- **Below 90%:** the branch must have *higher* coverage than `main`, measured
+  in a temporary worktree. Equal is a failure. Every PR that touches code has
+  to leave coverage higher than it found it until the target is reached.
+- **No changes under `src/` or `tests/`** (docs-only branches), or `main`
+  itself: report only, no gate.
+
+Coverage is low today because the game loop and drawing live in `main()`.
+Moving logic out of `main()` into tested model code is how it goes up.

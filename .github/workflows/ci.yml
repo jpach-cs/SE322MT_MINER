@@ -30,6 +30,9 @@ jobs:
       RAYLIB_VERSION: "6.0"
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The coverage gate checks out origin/main to measure its coverage.
+          fetch-depth: 0
 
       - name: Install raylib build dependencies
         run: |
@@ -55,3 +58,17 @@ jobs:
 
       - name: Run make test
         run: LIBRARY_PATH="$HOME/raylib/lib" make test
+
+      - name: Install gcovr
+        run: pip install gcovr==8.7
+
+      - name: Run make coverage (below 90%, the branch must beat main)
+        run: LIBRARY_PATH="$HOME/raylib/lib" make coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore

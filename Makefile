@@ -35,7 +35,8 @@ else ifeq ($(PLATFORM),Darwin)
     TEST_BIN = bin/tests
     RM       = rm -f
     RUN      = ./$(TARGET)
-    CLEAN    = $(RM) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM
+    CLEAN    = $(RM) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM bin/coverage coverage
+    GCOV     = xcrun llvm-cov gcov
 else
     INCLUDES = -Iinclude
     LIBS     = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
@@ -43,10 +44,11 @@ else
     TEST_BIN = bin/tests
     RM       = rm -f
     RUN      = ./$(TARGET)
-    CLEAN    = $(RM) $(TARGET) $(TEST_BIN)
+    CLEAN    = $(RM) $(TARGET) $(TEST_BIN) && $(RM) -r bin/coverage coverage
+    GCOV     = gcov
 endif
 
-.PHONY: all run clean docs lint test
+.PHONY: all run clean docs lint test coverage coverage-report
 
 all: $(TARGET)
 
@@ -96,3 +98,32 @@ $(TEST_BIN): $(TEST_SRC) $(SRC) third_party/doctest.h
 
 test: $(TEST_BIN)
 	./$(TEST_BIN)
+
+# ── Coverage ────────────────────────────────────────────────────────────────
+# coverage-report builds the tests with --coverage, runs them, and writes
+# coverage/index.html plus coverage/summary.json. It never fails on the number.
+#
+# coverage runs the report, then the gate in scripts/coverage_gate.py:
+#   - line coverage of src/ at or above COVERAGE_MIN passes;
+#   - below that, the branch must beat main's coverage (main is measured in a
+#     temporary worktree), unless the branch changes nothing in src/ or tests/.
+# macOS and Linux only; needs gcovr (brew install gcovr or pip install gcovr).
+COVERAGE_FILTER = src/
+COVERAGE_MIN    = 90
+COVERAGE_BASE   = origin/main
+COVERAGE_BIN    = bin/coverage/tests
+
+coverage-report:
+	@command -v gcovr >/dev/null 2>&1 || { echo "gcovr not found (brew install gcovr or pip install gcovr)"; exit 1; }
+	rm -rf bin/coverage coverage
+	mkdir -p bin/coverage coverage
+	$(CXX) $(CXXFLAGS) -O0 --coverage $(TEST_INCLUDES) $(TEST_SRC) -o $(COVERAGE_BIN) $(LIBS)
+	./$(COVERAGE_BIN)
+	gcovr --root . --object-directory bin/coverage --gcov-executable "$(GCOV)" \
+	      --filter '$(COVERAGE_FILTER)' --txt --html-details coverage/index.html \
+	      --json-summary coverage/summary.json --print-summary
+
+coverage: coverage-report
+	python3 scripts/coverage_gate.py --summary coverage/summary.json --minimum $(COVERAGE_MIN) \
+	        --base $(COVERAGE_BASE) --make "$(MAKE)" --watch src tests \
+	        --make-var CC="$(CC)" --make-var CXX="$(CXX)"
