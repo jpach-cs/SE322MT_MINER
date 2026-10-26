@@ -1,4 +1,4 @@
-name: lint
+name: ci
 
 on:
   push:
@@ -20,3 +20,37 @@ jobs:
 
       - name: Run make lint
         run: make lint
+
+  test:
+    name: make test
+    runs-on: ubuntu-latest
+    env:
+      # Matches the headers vendored in include/.
+      RAYLIB_VERSION: "6.0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install raylib build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake libgl1-mesa-dev libx11-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libasound2-dev
+
+      - name: Cache raylib
+        id: raylib-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/raylib
+          key: raylib-${{ env.RAYLIB_VERSION }}-${{ runner.os }}
+
+      - name: Build raylib
+        if: steps.raylib-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$RAYLIB_VERSION" https://github.com/raysan5/raylib.git /tmp/raylib-src
+          cmake -S /tmp/raylib-src -B /tmp/raylib-build -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_EXAMPLES=OFF -DGLFW_BUILD_WAYLAND=OFF -DCMAKE_INSTALL_PREFIX="$HOME/raylib"
+          cmake --build /tmp/raylib-build -j
+          cmake --install /tmp/raylib-build
+
+      - name: Run make test
+        run: LIBRARY_PATH="$HOME/raylib/lib" make test
