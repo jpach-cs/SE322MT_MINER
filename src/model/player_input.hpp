@@ -24,9 +24,9 @@ class PlayerInput
 {
 private:
     int keyPressed;
-    std::string action;
 
 public:
+    std::string action;
     PlayerInput(int keyPressed)
     {
         if (!INPUT_MAP.contains(keyPressed))
