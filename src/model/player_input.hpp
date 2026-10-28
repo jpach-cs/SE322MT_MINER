@@ -15,6 +15,11 @@
 #include <string>
 #include "config.hpp"
 
+/*
+    BETA TEAM ROOLZ, ALPHA TEAM DROOLZ
+*/
+
+// Convert player input to action
 class PlayerInput {
     private:
         int keyPressed;
