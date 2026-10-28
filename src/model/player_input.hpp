@@ -20,16 +20,19 @@
 */
 
 // Convert player input to action
-class PlayerInput {
-    private:
-        int keyPressed;
-        std::string action;
+class PlayerInput
+{
+private:
+    int keyPressed;
+    std::string action;
 
-    public:
-        PlayerInput(int keyPressed) {
-            if (!INPUT_MAP.contains(keyPressed)) {
-                action = "";
-            }
-            action = INPUT_MAP[keyPressed];
-        };
+public:
+    PlayerInput(int keyPressed)
+    {
+        if (!INPUT_MAP.contains(keyPressed))
+        {
+            action = "";
+        }
+        action = INPUT_MAP[keyPressed];
+    };
 };

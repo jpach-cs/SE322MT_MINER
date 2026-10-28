@@ -16,6 +16,11 @@
 #include <map>
 #include <string>
 
+
+/*
+    BETA TEAM ROOLZ, ALPHA TEAM DROOLZ
+*/
+
 // Screen Config
 constexpr int SCREEN_W = 480;
 constexpr int SCREEN_H = 270;
@@ -34,18 +39,18 @@ constexpr float JUMP_FORCE = 7.5f;
 constexpr float MAX_FALL = -9.0f;
 
 // Stamina Bar Config
-constexpr int   STAMINA_BAR_W = 100;             /* width of stamina bar in pixels */
-constexpr int   STAMINA_BAR_H = 15;              /* height of stamina bar in pixels */
-constexpr int   STAMINA_BAR_X = 15;              /* x position of stamina bar */
-constexpr int   STAMINA_BAR_Y = 35;              /* y position of stamina bar */
-constexpr int   STAMINA_BAR_TEXT_SIZE = 18;      /* border thickness of stamina bar */
+constexpr int STAMINA_BAR_W = 100;        /* width of stamina bar in pixels */
+constexpr int STAMINA_BAR_H = 15;         /* height of stamina bar in pixels */
+constexpr int STAMINA_BAR_X = 15;         /* x position of stamina bar */
+constexpr int STAMINA_BAR_Y = 35;         /* y position of stamina bar */
+constexpr int STAMINA_BAR_TEXT_SIZE = 18; /* border thickness of stamina bar */
 
 // Stamina Config
-constexpr float PLAYER_MAX_STAMINA = 100.0f;     /* maximum stamina value */
-constexpr float JUMP_STAMINA_COST = 15.0f;       /* stamina cost per jump  */
-constexpr float STAMINA_FROM_FOOD = 40.0f;       /* stamina gained from food */
-constexpr float SPEED_PENALTY = 0.75f;           /* speed penalty when stamina is low */
-constexpr float JUMP_PENALTY = 0.5f;             /* jump penalty when stamina is low */
+constexpr float PLAYER_MAX_STAMINA = 100.0f; /* maximum stamina value */
+constexpr float JUMP_STAMINA_COST = 15.0f;   /* stamina cost per jump  */
+constexpr float STAMINA_FROM_FOOD = 40.0f;   /* stamina gained from food */
+constexpr float SPEED_PENALTY = 0.75f;       /* speed penalty when stamina is low */
+constexpr float JUMP_PENALTY = 0.5f;         /* jump penalty when stamina is low */
 
 // Input Config
 // Key => Action
