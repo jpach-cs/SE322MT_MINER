@@ -7,6 +7,9 @@ CXX      = c++
 CXXFLAGS = -Wall -Wextra -std=c++20 -g
 TEST_SRC = $(wildcard tests/*.cpp)
 
+CPP_SRC = $(wildcard src/*.cpp)
+CPP_TARGET = bin/game_cpp
+
 # ── Platform detection ──────────────────────────────────────────────────────
 # Windows (w64devkit): uses the bundled raylib in include/ and lib/.
 # macOS: uses raylib from Homebrew (`brew install raylib`).
@@ -54,6 +57,11 @@ all: $(TARGET)
 
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SRC) -o $(TARGET) $(LIBS)
+
+# Compiles and runs the C++ files from /src
+run-cpp: $(CPP_SRC)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(CPP_SRC) -o $(CPP_TARGET) $(LIBS)
+	./$(CPP_TARGET)
 
 run: $(TARGET)
 	$(RUN)
