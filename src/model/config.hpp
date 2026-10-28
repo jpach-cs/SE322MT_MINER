@@ -51,6 +51,10 @@ constexpr float JUMP_PENALTY = 0.5f;             /* jump penalty when stamina is
 // Key => Action
 std::map<int, std::string> INPUT_MAP = {
     {int('A'), "left"},
+    {263, "left"}, // Left arrow
     {int('D'), "right"},
-    {int(' '), "jump"}
+    {262, "right"}, // Right arrow
+    {int(' '), "jump"},
+    {int('W'), "jump"},
+    {265, "jump"} // Up arrow
 };
