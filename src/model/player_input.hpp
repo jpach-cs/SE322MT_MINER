@@ -32,6 +32,7 @@ public:
         if (!INPUT_MAP.contains(keyPressed))
         {
             action = "";
+            return;
         }
         action = INPUT_MAP[keyPressed];
     };
