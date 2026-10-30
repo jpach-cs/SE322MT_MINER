@@ -10,24 +10,26 @@
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 
  #include "stamina.hpp"
-static const float PLAYER_MAX_STAMINA = 100.0f;     /* maximum stamina value */
-static const float STAMINA_FROM_FOOD = 40.0f;       /* stamina gained from food */
 
- class Stamina {
-    private:
-        float stamina;
-    public:
-        Stamina() {stamina = PLAYER_MAX_STAMINA;}
+Stamina::Stamina()
+    : stamina(PLAYER_MAX_STAMINA) {}
 
-        float getStamina() {return stamina;}
+Stamina::Stamina(float initialStamina)
+    : stamina(initialStamina) {}
 
-        void updatePlayerStamina(float change) {
-            if (change < 0.0f) {
-                if (stamina >= (change * -1.0f)) stamina += change;
-            } else {
-                stamina += change;
-            }
+float Stamina::getStamina() const {
+    return stamina;
+}
 
-            if (stamina > PLAYER_MAX_STAMINA) stamina = PLAYER_MAX_STAMINA;
+void Stamina::updatePlayerStamina(float change) {
+    if (change < 0.0f) {
+        if (stamina >= (change * -1.0f)) {
+            stamina += change;
         }
- };
+    } else {
+        stamina += change;
+    }
+
+    if (stamina > PLAYER_MAX_STAMINA) stamina = PLAYER_MAX_STAMINA;
+    if (stamina < 0.0f) stamina = 0.0f;
+}
