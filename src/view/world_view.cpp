@@ -13,10 +13,40 @@
 
 WorldView::WorldView()
 {
-
+    mapInit(&map);
 }
 
 WorldView::~WorldView()
 {
     
+}
+
+void WorldView::mapInit(GameMap* map)
+{
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            map->tiles[y][x] = (y < 5 ? TILE_EARTH : TILE_EMPTY);
+        }
+    }
+
+    /* test food: two on the ground, one that needs a jump to reach */
+    map->tiles[5][8]   = TILE_FOOD;
+    map->tiles[5][40]  = TILE_FOOD;
+    map->tiles[10][24] = TILE_FOOD;
+}
+
+void WorldView::drawMap(const GameMap* map)
+{
+    for (int y = 0; y < MAP_ROWS; y++) {
+        for (int x = 0; x < MAP_COLS; x++) {
+            if (map->tiles[y][x] == TILE_EMPTY) continue;
+            DrawRectangleRec(tileScreenRect(x, y), map->tiles[y][x] == TILE_FOOD ? YELLOW : DARKBROWN);
+        }
+    }
+}
+
+Rectangle WorldView::tileScreenRect(int col, int row)
+{
+    return (Rectangle){ (float)(col * TILE_SIZE), (float)(SCREEN_H - (row * TILE_SIZE)),
+                        (float)TILE_SIZE, (float)TILE_SIZE };
 }
