@@ -68,7 +68,6 @@ class Stamina {
     -float stamina
     +getStamina()
     +UpdateStamina()
-    +RegenerateStaminaFromFood()
 }
 class Map {
     +Tiles tiles[][]
