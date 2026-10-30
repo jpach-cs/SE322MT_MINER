@@ -1,12 +1,28 @@
 #pragma once
 
-/* hud.hpp
- *
- * View: drawing only. May read the Model; never changes it.
- *
- * drawStaminaBar and other on-screen text. Today: drawStaminaBar.
- *
- * Placeholder from the skeleton PR. Target layout: sugestions.md in
- * jpach-cs/esof-322_miner_decription. Design: docs/architecture.md (to be written from
- * the Alpha and Beta documents). Move code here one class at a time, with its tests in
- * tests/test_<module>.cpp, and keep make test passing at every step. */
+/** Layout of the stamina bar on screen. Defaults match the old main.c constants. */
+struct StaminaBarLayout {
+    float x        = 15.0f;   
+    float y        = 35.0f;   
+    float width    = 100.0f;  
+    float height   = 15.0f;   
+    int   textSize = 18;    
+    float textGap  = 20.0f; 
+};
+
+/** Draws the stamina bar and its label. */
+class StaminaBar {
+public:
+    explicit StaminaBar(const StaminaBarLayout &layout = StaminaBarLayout{});
+
+   
+    static int fillWidth(float current, float max, float barWidth);
+
+    /** Draws the bar for current out of max. */
+    void draw(float current, float max) const;
+
+    const StaminaBarLayout &layout() const { return layout_; }
+
+private:
+    StaminaBarLayout layout_;
+};
