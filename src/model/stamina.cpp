@@ -40,3 +40,4 @@ float Stamina::ValidateStamina(float stamina) {
     if (stamina < 0.0f) return 0.0f;
     return stamina;
 }
+ * tests/test_<module>.cpp, and keep make test passing at every step. */
