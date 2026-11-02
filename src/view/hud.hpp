@@ -3,11 +3,11 @@
 /** Layout of the stamina bar on screen. Defaults match the old main.c constants. */
 struct StaminaBarLayout {
     float x        = 15.0f;   
-    float y        = 35.0f;   
-    float width    = 100.0f;  
+    float y        = 15.0f;   
+    float width    = 135.0f;  
     float height   = 15.0f;   
-    int   textSize = 18;    
-    float textGap  = 20.0f; 
+    int   textSize = 15;    
+    float textGap  = 5.0f; 
 };
 
 /** Draws the stamina bar and its label. */

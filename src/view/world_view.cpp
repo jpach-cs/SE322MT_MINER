@@ -11,42 +11,55 @@
 
 #include "world_view.hpp"
 
-WorldView::WorldView()
+WorldView::WorldView(int screenW, int screenH, const char* title, int targetFps)
+    : screenW_(screenW), screenH_(screenH),
+      background_{ 18, 10, 5, 255 },
+      earthColor_(DARKBROWN),
+      foodColor_(YELLOW) 
 {
-    mapInit(&map);
+    InitWindow(screenW_, screenH_, title);
+    SetTargetFPS(targetFps);
 }
 
-WorldView::~WorldView()
+WorldView::~WorldView() 
 {
-    
+    CloseWindow();
 }
 
-void WorldView::mapInit(GameMap* map)
+bool WorldView::ShouldClose() const 
 {
-    for (int y = 0; y < MAP_ROWS; y++) {
-        for (int x = 0; x < MAP_COLS; x++) {
-            map->tiles[y][x] = (y < 5 ? TILE_EARTH : TILE_EMPTY);
+    return WindowShouldClose();
+}
+
+void WorldView::BeginFrame() const 
+{
+    BeginDrawing();
+    ClearBackground(background_);
+}
+
+void WorldView::DrawTileMap(const TileMap& map) const 
+{
+    for (int row = 0; row < map.Rows(); row++) {
+        for (int col = 0; col < map.Cols(); col++) {
+            const TileType type = map.Get(col, row);
+            if (type == TileType::Empty) continue;
+            DrawRectangleRec(ToScreen(map.TileWorldRect(col, row)),
+                             type == TileType::Food ? foodColor_ : earthColor_);
         }
     }
-
-    /* test food: two on the ground, one that needs a jump to reach */
-    map->tiles[5][8]   = TILE_FOOD;
-    map->tiles[5][40]  = TILE_FOOD;
-    map->tiles[10][24] = TILE_FOOD;
 }
 
-void WorldView::drawMap(const GameMap* map)
+void WorldView::EndFrame() const 
 {
-    for (int y = 0; y < MAP_ROWS; y++) {
-        for (int x = 0; x < MAP_COLS; x++) {
-            if (map->tiles[y][x] == TILE_EMPTY) continue;
-            DrawRectangleRec(tileScreenRect(x, y), map->tiles[y][x] == TILE_FOOD ? YELLOW : DARKBROWN);
-        }
-    }
+    EndDrawing();
 }
 
-Rectangle WorldView::tileScreenRect(int col, int row)
+Rectangle WorldView::ToScreen(const Rectangle& r) const 
 {
-    return (Rectangle){ (float)(col * TILE_SIZE), (float)(SCREEN_H - (row * TILE_SIZE)),
-                        (float)TILE_SIZE, (float)TILE_SIZE };
+    return Rectangle{ r.x, screenH_ - (r.y + r.height), r.width, r.height };
+}
+
+Rectangle WorldView::ToScreen(Vector2 worldPos, float w, float h) const 
+{
+    return ToScreen(Rectangle{ worldPos.x, worldPos.y, w, h });
 }
