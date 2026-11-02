@@ -29,7 +29,7 @@ void StaminaBar::draw(float current, float max) const {
     DrawRectangleRec(fill, BLUE);
     DrawRectangleLinesEx(background, 1.0f, WHITE);
 
-    DrawText(TextFormat("stamina: %.0f / %.0f", current, max),
+    DrawText(TextFormat("Stamina: %.0f / %.0f", current, max),
              static_cast<int>(layout_.x + layout_.textGap), static_cast<int>(layout_.y),
              layout_.textSize, WHITE);
 }
