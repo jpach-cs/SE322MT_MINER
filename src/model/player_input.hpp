@@ -22,9 +22,6 @@
 // Convert player input to action
 class PlayerInput
 {
-private:
-    int keyPressed;
-
 public:
     std::string action;
     PlayerInput(int keyPressed)
@@ -34,6 +31,6 @@ public:
             action = "";
             return;
         }
-        action = INPUT_MAP[keyPressed];
+        action = INPUT_MAP.at(keyPressed);
     };
 };
