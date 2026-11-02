@@ -15,7 +15,9 @@ Stamina::Stamina()
     : stamina(PLAYER_MAX_STAMINA) {}
 
 Stamina::Stamina(float initialStamina)
-    : stamina(initialStamina) {}
+    : stamina(initialStamina) {
+        stamina = ValidateStamina(initialStamina);
+    }
 
 float Stamina::getStamina() const {
     return stamina;
@@ -30,6 +32,11 @@ void Stamina::updatePlayerStamina(float change) {
         stamina += change;
     }
 
-    if (stamina > PLAYER_MAX_STAMINA) stamina = PLAYER_MAX_STAMINA;
-    if (stamina < 0.0f) stamina = 0.0f;
+    stamina = ValidateStamina(stamina);
+}
+
+float Stamina::ValidateStamina(float stamina) {
+    if (stamina > PLAYER_MAX_STAMINA) return PLAYER_MAX_STAMINA;
+    if (stamina < 0.0f) return 0.0f;
+    return stamina;
 }

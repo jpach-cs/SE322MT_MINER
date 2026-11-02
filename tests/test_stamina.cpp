@@ -62,4 +62,12 @@ TEST_SUITE("Stamina") {
 
         CHECK(stamina.getStamina() == doctest::Approx(42.0f));
     }
+
+    TEST_CASE("ValidateStamina clamps values to the valid range") {
+        Stamina stamina;
+
+        CHECK(stamina.ValidateStamina(110.0f) == doctest::Approx(100.0f));
+        CHECK(stamina.ValidateStamina(-10.0f) == doctest::Approx(0.0f));
+        CHECK(stamina.ValidateStamina(42.5f) == doctest::Approx(42.5f));
+    }
 }
