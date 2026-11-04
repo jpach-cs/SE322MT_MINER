@@ -13,30 +13,32 @@
 
 #include "player.hpp"
 
-player::Node() {
-    facingRight = true;
-    Onground = false;
-    position = { 50.0f, 50.0f }; // Starting position
-    velocity = { 0.0f, 0.0f };
-}
+Player::Player() : Player(100.0f) {}
 
-player::~Node() {}
+Player::Player(float initialStamina)
+    : stamina(initialStamina),
+      facingRight(true),
+      Onground(false),
+      position(50.0f, FLOOR_Y + PLAYER_H),
+      velocity() {}
+
+Player::~Player() {}
 
 // Handle horizontal movement and input
-void player::Move() {
+void Player::Move() {
     // Left/Right input
     if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
-        position.x -= PLAYER_SPEED;
+        velocity.x -= PLAYER_SPEED; 
         facingRight = false;
     }
     if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
-        position.x += PLAYER_SPEED;
+        velocity.x += PLAYER_SPEED;
         facingRight = true;
     }
 }
 
 // jumping action
-void player::Jump() {
+void Player::Jump() {
     if (Onground && (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))) {
         velocity.y = JUMP_FORCE;
         Onground = false;
@@ -44,37 +46,37 @@ void player::Jump() {
 }
 
 //  gravity and update vertical position
-void player::UpdatePhysics() {
+void Player::UpdatePhysics() {
     if (!Onground) {
-        velocity.y += GRAVITY;
+        velocity += Vector2D(0.0f, GRAVITY);
         if (velocity.y < MAX_FALL) {
             velocity.y = MAX_FALL;
         }
     }
 
     // velocity to position 
-    position.y -= velocity.y; 
+    position -= velocity; 
 
-    // Simple temporary floor collision check at screen bottom (SCREEN_H = 270)
-    if (position.y >= 270 - PLAYER_H) {
-        position.y = 270 - PLAYER_H;
+    // Simple temporary floor collision check at screen bottom
+    if (position.y >= FLOOR_Y - PLAYER_H) {
+        position.y = FLOOR_Y - PLAYER_H;
         velocity.y = 0;
         Onground = true;
     }
 }
 
-Vector2D player::getPosition() const {
+Vector2D Player::getPosition() const {
     return position;
 }
 
-void player::SetPosition(Vector2D pos) {
+void Player::SetPosition(Vector2D pos) {
     position = pos;
 }
 
-bool player::IsOnGround() const {
+bool Player::IsOnGround() const {
     return Onground;
 }
 
-bool player::IsFacingRight() const {
+bool Player::IsFacingRight() const {
     return facingRight;
 }

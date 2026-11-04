@@ -17,4 +17,19 @@ public:
     Vector2D subtract(const Vector2D& other) const noexcept;
     Vector2D multiply(float scalar) const noexcept;
     Vector2D divide(float scalar) const;
+
+    Vector2D operator+(const Vector2D& other) const noexcept;
+    Vector2D operator-(const Vector2D& other) const noexcept;
+    Vector2D operator*(float scalar) const noexcept;
+    Vector2D operator/(float scalar) const;
+    Vector2D operator-() const noexcept;
+
+    Vector2D& operator+=(const Vector2D& other) noexcept;
+    Vector2D& operator-=(const Vector2D& other) noexcept;
+    Vector2D& operator*=(float scalar) noexcept;
+    Vector2D& operator/=(float scalar);
+
+    bool operator==(const Vector2D& other) const noexcept = default;
 };
+
+Vector2D operator*(float scalar, const Vector2D& vector) noexcept;

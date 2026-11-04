@@ -62,6 +62,43 @@ TEST_SUITE("Vector2D") {
         CHECK_THROWS_AS(Vector2D(1.0f, 2.0f).divide(0.0f), std::domain_error);
     }
 
+    TEST_CASE("arithmetic operators match the named methods") {
+        const Vector2D first(5.0f, -2.0f);
+        const Vector2D second(-3.0f, 7.0f);
+
+        CHECK(first + second == first.add(second));
+        CHECK(first - second == first.subtract(second));
+        CHECK(first * 0.5f == first.multiply(0.5f));
+        CHECK(0.5f * first == first.multiply(0.5f));
+        CHECK(first / 2.0f == first.divide(2.0f));
+        CHECK(-first == Vector2D(-5.0f, 2.0f));
+    }
+
+    TEST_CASE("compound assignment operators update in place") {
+        Vector2D value(6.0f, -8.0f);
+
+        value += Vector2D(1.0f, 2.0f);
+        CHECK(value == Vector2D(7.0f, -6.0f));
+        value -= Vector2D(3.0f, 4.0f);
+        CHECK(value == Vector2D(4.0f, -10.0f));
+        value *= 2.0f;
+        CHECK(value == Vector2D(8.0f, -20.0f));
+        value /= 4.0f;
+        CHECK(value == Vector2D(2.0f, -5.0f));
+    }
+
+    TEST_CASE("equality compares both components") {
+        CHECK(Vector2D(1.0f, 2.0f) == Vector2D(1.0f, 2.0f));
+        CHECK(Vector2D(1.0f, 2.0f) != Vector2D(2.0f, 1.0f));
+    }
+
+    TEST_CASE("division operators by zero throw a domain error") {
+        Vector2D value(1.0f, 2.0f);
+
+        CHECK_THROWS_AS(value / 0.0f, std::domain_error);
+        CHECK_THROWS_AS(value /= 0.0f, std::domain_error);
+    }
+
     TEST_CASE("cast copies both components to raylib Vector2") {
         const Vector2 converted = Vector2D(1.5f, -2.5f).cast();
 

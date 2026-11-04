@@ -18,11 +18,11 @@ static const float PLAYER_MAX_STAMINA = 100.0f;     /* maximum stamina value */
 class Stamina {
     private:
         float stamina;
-        float ValidateStamina(float stamina);
     public:
         Stamina();
         explicit Stamina(float initialStamina);
 
         void UpdatePlayerStamina(float change);
         float getStamina() const;
+        float ValidateStamina(float stamina);
 };

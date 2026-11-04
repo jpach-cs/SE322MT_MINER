@@ -42,3 +42,47 @@ Vector2 Vector2D::cast() const noexcept {
     result.y = y;
     return result;
 }
+
+Vector2D Vector2D::operator+(const Vector2D& other) const noexcept {
+    return add(other);
+}
+
+Vector2D Vector2D::operator-(const Vector2D& other) const noexcept {
+    return subtract(other);
+}
+
+Vector2D Vector2D::operator*(float scalar) const noexcept {
+    return multiply(scalar);
+}
+
+Vector2D Vector2D::operator/(float scalar) const {
+    return divide(scalar);
+}
+
+Vector2D Vector2D::operator-() const noexcept {
+    return {-x, -y};
+}
+
+Vector2D& Vector2D::operator+=(const Vector2D& other) noexcept {
+    *this = add(other);
+    return *this;
+}
+
+Vector2D& Vector2D::operator-=(const Vector2D& other) noexcept {
+    *this = subtract(other);
+    return *this;
+}
+
+Vector2D& Vector2D::operator*=(float scalar) noexcept {
+    *this = multiply(scalar);
+    return *this;
+}
+
+Vector2D& Vector2D::operator/=(float scalar) {
+    *this = divide(scalar);
+    return *this;
+}
+
+Vector2D operator*(float scalar, const Vector2D& vector) noexcept {
+    return vector.multiply(scalar);
+}
