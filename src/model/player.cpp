@@ -48,7 +48,7 @@ void Player::Jump() {
 //  gravity and update vertical position
 void Player::UpdatePhysics() {
     if (!Onground) {
-        velocity += Vector2D(0.0f, GRAVITY);
+        velocity.y += GRAVITY;
         if (velocity.y < MAX_FALL) {
             velocity.y = MAX_FALL;
         }

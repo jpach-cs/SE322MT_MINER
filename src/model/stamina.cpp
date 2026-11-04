@@ -9,21 +9,21 @@
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 
- #include "stamina.hpp"
+#include "stamina.hpp"
 
 Stamina::Stamina()
     : stamina(PLAYER_MAX_STAMINA) {}
 
 Stamina::Stamina(float initialStamina)
     : stamina(initialStamina) {
-        stamina = ValidateStamina(initialStamina);
-    }
+    stamina = ValidateStamina(initialStamina);
+}
 
 float Stamina::getStamina() const {
     return stamina;
 }
 
-void Stamina::updatePlayerStamina(float change) {
+void Stamina::UpdatePlayerStamina(float change) {
     if (change < 0.0f) {
         if (stamina >= (change * -1.0f)) {
             stamina += change;
@@ -35,9 +35,8 @@ void Stamina::updatePlayerStamina(float change) {
     stamina = ValidateStamina(stamina);
 }
 
-float Stamina::ValidateStamina(float stamina) {
-    if (stamina > PLAYER_MAX_STAMINA) return PLAYER_MAX_STAMINA;
-    if (stamina < 0.0f) return 0.0f;
-    return stamina;
+float Stamina::ValidateStamina(float staminaValue) {
+    if (staminaValue > PLAYER_MAX_STAMINA) return PLAYER_MAX_STAMINA;
+    if (staminaValue < 0.0f) return 0.0f;
+    return staminaValue;
 }
- * tests/test_<module>.cpp, and keep make test passing at every step. */
