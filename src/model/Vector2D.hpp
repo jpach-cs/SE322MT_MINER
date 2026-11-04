@@ -15,6 +15,7 @@ public:
 
     Vector2D add(const Vector2D& other) const noexcept;
     Vector2D subtract(const Vector2D& other) const noexcept;
+    float dot(const Vector2D& other) const noexcept;
     Vector2D multiply(float scalar) const noexcept;
     Vector2D divide(float scalar) const;
 

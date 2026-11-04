@@ -47,6 +47,14 @@ TEST_SUITE("Vector2D") {
         CHECK(difference.y == doctest::Approx(-9.0f));
     }
 
+    TEST_CASE("dot product combines matching components") {
+        const Vector2D first(3.0f, -4.0f);
+        const Vector2D second(2.0f, 5.0f);
+
+        CHECK(first.dot(second) == doctest::Approx(3.0f * 2.0f + (-4.0f) * 5.0f));
+        CHECK(Vector2D().dot(Vector2D(10.0f, -2.0f)) == doctest::Approx(0.0f));
+    }
+
     TEST_CASE("multiplication and division scale both components") {
         const Vector2D value(6.0f, -8.0f);
         const Vector2D product = value.multiply(0.5f);

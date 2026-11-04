@@ -24,6 +24,10 @@ Vector2D Vector2D::subtract(const Vector2D& other) const noexcept {
     return {x - other.x, y - other.y};
 }
 
+float Vector2D::dot(const Vector2D& other) const noexcept {
+    return x * other.x + y * other.y;
+}
+
 Vector2D Vector2D::multiply(float scalar) const noexcept {
     return {x * scalar, y * scalar};
 }
