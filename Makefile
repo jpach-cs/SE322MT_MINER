@@ -7,8 +7,8 @@ CXX      = c++
 CXXFLAGS = -Wall -Wextra -std=c++20 -g
 TEST_SRC = $(wildcard tests/*.cpp)
 
-CPP_SRC = $(wildcard src/*.cpp)
-CPP_TARGET = bin/game_cpp
+CPP_SRC = $(wildcard src/*.cpp src/*/*.cpp)
+#CPP_TARGET = bin/game_cpp
 
 # ── Platform detection ──────────────────────────────────────────────────────
 # Windows (w64devkit): uses the bundled raylib in include/ and lib/.
@@ -24,10 +24,12 @@ ifeq ($(PLATFORM),windows)
     INCLUDES = -Iinclude
     LIBS     = -Llib -lraylib -lopengl32 -lgdi32 -lwinmm
     TARGET   = bin/game.exe
+	CPP_TARGET = bin/game_cpp.exe
     TEST_BIN = bin/tests.exe
     RM       = del /q
     RUN      = $(TARGET)
-    CLEAN    = del bin\game.exe bin\tests.exe
+	CPP_RUN  = $(CPP_TARGET)
+    CLEAN    = rm -f bin/game.exe bin/tests.exe $(CPP_TARGET)
 else ifeq ($(PLATFORM),Darwin)
     BREW_PREFIX ?= $(shell brew --prefix raylib 2>/dev/null || echo /opt/homebrew/opt/raylib)
     INCLUDES = -I$(BREW_PREFIX)/include
@@ -35,36 +37,40 @@ else ifeq ($(PLATFORM),Darwin)
                -framework CoreVideo -framework IOKit -framework Cocoa \
                -framework GLUT -framework OpenGL
     TARGET   = bin/game
+	CPP_TARGET = bin/cpp_game
     TEST_BIN = bin/tests
     RM       = rm -f
     RUN      = ./$(TARGET)
-    CLEAN    = $(RM) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM bin/coverage coverage
+	CPP_RUN  = ./$(CPP_TARGET)
+    CLEAN    = $(RM) $(CPP_TARGET) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM bin/coverage coverage
     GCOV     = xcrun llvm-cov gcov
 else
     INCLUDES = -Iinclude
     LIBS     = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
     TARGET   = bin/game
+	CPP_TARGET = bin/cpp_game
     TEST_BIN = bin/tests
     RM       = rm -f
     RUN      = ./$(TARGET)
-    CLEAN    = $(RM) $(TARGET) $(TEST_BIN) && $(RM) -r bin/coverage coverage
+	CPP_RUN  = ./$(CPP_TARGET)
+    CLEAN    = $(RM) $(CPP_TARGET) $(TARGET) $(TEST_BIN) && $(RM) -r bin/coverage coverage
     GCOV     = gcov
 endif
 
 .PHONY: all run clean docs lint test coverage coverage-report
 
-all: $(TARGET)
+all: $(CPP_TARGET)
 
-$(TARGET): $(SRC)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SRC) -o $(TARGET) $(LIBS)
+$(CPP_TARGET): $(CPP_SRC)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(CPP_SRC) -o $(CPP_TARGET) $(LIBS)
 
 # Compiles and runs the C++ files from /src
-run-cpp: $(CPP_SRC)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(CPP_SRC) -o $(CPP_TARGET) $(LIBS)
-	./$(CPP_TARGET)
+run-c: $(SRC)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SRC) -o $(TARGET) $(LIBS)
+	$(TARGET)
 
-run: $(TARGET)
-	$(RUN)
+run: $(CPP_TARGET)
+	$(CPP_TARGET)
 
 clean:
 	$(CLEAN)
