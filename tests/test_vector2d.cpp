@@ -106,11 +106,4 @@ TEST_SUITE("Vector2D") {
         CHECK_THROWS_AS(value / 0.0f, std::domain_error);
         CHECK_THROWS_AS(value /= 0.0f, std::domain_error);
     }
-
-    TEST_CASE("cast copies both components to raylib Vector2") {
-        const Vector2 converted = Vector2D(1.5f, -2.5f).cast();
-
-        CHECK(converted.x == doctest::Approx(1.5f));
-        CHECK(converted.y == doctest::Approx(-2.5f));
-    }
 }

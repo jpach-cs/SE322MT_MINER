@@ -25,25 +25,25 @@ Player::Player(float initialStamina)
 Player::~Player() {}
 
 // Handle horizontal movement and input
-void Player::Move() {
-    // Left/Right input
-    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
-        velocity.x -= PLAYER_SPEED; 
-        facingRight = false;
-    }
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
-        velocity.x += PLAYER_SPEED;
-        facingRight = true;
-    }
-}
+// void Player::Move() {
+//     // Left/Right input
+//     if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
+//         velocity.x -= PLAYER_SPEED; 
+//         facingRight = false;
+//     }
+//     if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
+//         velocity.x += PLAYER_SPEED;
+//         facingRight = true;
+//     }
+// }
 
-// jumping action
-void Player::Jump() {
-    if (Onground && (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))) {
-        velocity.y = JUMP_FORCE;
-        Onground = false;
-    }
-}
+// // jumping action
+// void Player::Jump() {
+//     if (Onground && (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))) {
+//         velocity.y = JUMP_FORCE;
+//         Onground = false;
+//     }
+// }
 
 //  gravity and update vertical position
 void Player::UpdatePhysics() {

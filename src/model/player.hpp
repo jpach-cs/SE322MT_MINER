@@ -20,7 +20,7 @@
  static const float JUMP_FORCE = 7.5f;
  static const float MAX_FALL = -9.0f;
  static const float PLAYER_H = 30.0f;
- static const float GROUND_Y = 40.0f;                          // screen bottom (SCREEN_H)
+ static const float GROUND_Y = 270 - PLAYER_H;          // screen bottom (SCREEN_H)
 
  class Player {
     private:

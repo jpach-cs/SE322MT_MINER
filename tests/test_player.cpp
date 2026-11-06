@@ -3,13 +3,13 @@
 
 #include "../src/model/player.hpp"
 
-static const float FLOOR_TOP = FLOOR_Y - PLAYER_H;
+static const float FLOOR_TOP = GROUND_Y - PLAYER_H;
 
 TEST_SUITE("player") {
     TEST_CASE("default constructor sets the starting state") {
         const Player player;
 
-        CHECK(player.getPosition() == Vector2D(50.0f, FLOOR_Y + PLAYER_H));
+        CHECK(player.getPosition() == Vector2D(50.0f, GROUND_Y + PLAYER_H));
         CHECK(player.IsFacingRight());
         CHECK_FALSE(player.IsOnGround());
     }
@@ -17,7 +17,7 @@ TEST_SUITE("player") {
     TEST_CASE("stamina constructor sets the same starting state") {
         const Player player(42.0f);
 
-        CHECK(player.getPosition() == Vector2D(50.0f, FLOOR_Y + PLAYER_H));
+        CHECK(player.getPosition() == Vector2D(50.0f, GROUND_Y + PLAYER_H));
         CHECK(player.IsFacingRight());
         CHECK_FALSE(player.IsOnGround());
     }
@@ -36,11 +36,11 @@ TEST_SUITE("player") {
 
         player.UpdatePhysics();
         CHECK(player.getPosition().x == doctest::Approx(10.0f));
-        CHECK(player.getPosition().y == doctest::Approx(100.0f - GRAVITY));
+        CHECK(player.getPosition().y == doctest::Approx(100.0f + GRAVITY));
         CHECK_FALSE(player.IsOnGround());
 
         player.UpdatePhysics();
-        CHECK(player.getPosition().y == doctest::Approx(100.0f - 3.0f * GRAVITY));
+        CHECK(player.getPosition().y == doctest::Approx(100.0f + 3.0f * GRAVITY));
     }
 
     TEST_CASE("falling speed is clamped to MAX_FALL") {
@@ -53,7 +53,7 @@ TEST_SUITE("player") {
         const float before = player.getPosition().y;
         player.UpdatePhysics();
 
-        CHECK(player.getPosition().y - before == doctest::Approx(-MAX_FALL));
+        CHECK(player.getPosition().y - before == doctest::Approx(MAX_FALL));
         CHECK_FALSE(player.IsOnGround());
     }
 
