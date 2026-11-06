@@ -16,5 +16,5 @@
     for key in INPUT_MAP:
         if isKeyPressed(key):
             create playerInput
-            return playerInput
+            return list of actions
 */
