@@ -7,7 +7,7 @@ CXX      = c++
 CXXFLAGS = -Wall -Wextra -std=c++20 -g
 TEST_SRC = $(wildcard tests/*.cpp)
 
-CPP_SRC = $(wildcard src/*.cpp src/*/*.cpp)
+CPP_SRC = $(wildcard src/*.cpp src/**/*.cpp)
 #CPP_TARGET = bin/game_cpp
 
 # ── Platform detection ──────────────────────────────────────────────────────
