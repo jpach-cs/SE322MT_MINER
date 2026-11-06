@@ -19,7 +19,7 @@ Player::Player(float initialStamina)
     : stamina(initialStamina),
       facingRight(true),
       Onground(false),
-      position(50.0f, FLOOR_Y + PLAYER_H),
+      position(50.0f, GROUND_Y + PLAYER_H),
       velocity() {}
 
 Player::~Player() {}
@@ -55,11 +55,11 @@ void Player::UpdatePhysics() {
     }
 
     // velocity to position 
-    position -= velocity; 
+    position += velocity; 
 
     // Simple temporary floor collision check at screen bottom
-    if (position.y >= FLOOR_Y - PLAYER_H) {
-        position.y = FLOOR_Y - PLAYER_H;
+    if (position.y >= GROUND_Y - PLAYER_H) {
+        position.y = GROUND_Y - PLAYER_H;
         velocity.y = 0;
         Onground = true;
     }

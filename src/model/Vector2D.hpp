@@ -1,5 +1,4 @@
 #pragma once
-#include "raylib.h"
 
 class Vector2D {
 public:
@@ -11,7 +10,6 @@ public:
 
     float length() const noexcept;
     Vector2D normalized() const noexcept;
-    Vector2 cast() const noexcept;
 
     Vector2D add(const Vector2D& other) const noexcept;
     Vector2D subtract(const Vector2D& other) const noexcept;

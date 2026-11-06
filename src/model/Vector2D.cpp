@@ -40,13 +40,6 @@ Vector2D Vector2D::divide(float scalar) const {
     return {x / scalar, y / scalar};
 }
 
-Vector2 Vector2D::cast() const noexcept {
-    Vector2 result;
-    result.x = x;
-    result.y = y;
-    return result;
-}
-
 Vector2D Vector2D::operator+(const Vector2D& other) const noexcept {
     return add(other);
 }
