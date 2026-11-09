@@ -38,7 +38,7 @@
         void UpdatePlayerStamina(float change);
         float getStamina() const;
 
-        void Move();
+        void Move(bool left);
         void Jump();
         void UpdatePhysics();
 
