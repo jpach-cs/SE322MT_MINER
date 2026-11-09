@@ -7,7 +7,6 @@ CXX      = c++
 CXXFLAGS = -Wall -Wextra -std=c++20 -g
 TEST_SRC = $(wildcard tests/*.cpp)
 
-CPP_SRC = $(wildcard src/*.cpp src/*/*.cpp)
 # Model code has no raylib, so the unit tests compile it in directly.
 MODEL_SRC = $(wildcard src/model/*.cpp)
 
@@ -22,8 +21,9 @@ else
 endif
 
 ifeq ($(PLATFORM),windows)
+	CPP_SRC = $(wildcard src/*.cpp src/*/*.cpp)
     INCLUDES = -Iinclude
-    LIBS     = -Llib -lraylib -lopengl32 -lgdi32 -lwinmm
+    LIBS     = -Llib/Windows -lraylib -lopengl32 -lgdi32 -lwinmm
     TARGET   = bin/game.exe
 	CPP_TARGET = bin/game_cpp.exe
     TEST_BIN = bin/tests.exe
@@ -46,8 +46,9 @@ else ifeq ($(PLATFORM),Darwin)
     CLEAN    = $(RM) $(CPP_TARGET) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM bin/coverage coverage
     GCOV     = xcrun llvm-cov gcov
 else
+	CPP_SRC = $(shell find src -name "*.cpp")
     INCLUDES = -Iinclude
-    LIBS     = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+    LIBS     = -Llib/Linux -Wl,-rpath,'$$ORIGIN/../lib/Linux' -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
     TARGET   = bin/game
 	CPP_TARGET = bin/cpp_game
     TEST_BIN = bin/tests
@@ -71,7 +72,7 @@ run-c: $(SRC)
 	$(TARGET)
 
 run: $(CPP_TARGET)
-	$(CPP_TARGET)
+	$(CPP_RUN)
 
 clean:
 	$(CLEAN)
