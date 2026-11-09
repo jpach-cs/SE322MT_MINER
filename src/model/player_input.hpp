@@ -20,17 +20,13 @@
 */
 
 // Convert player input to action
-class PlayerInput
+std::string PlayerInput(int keyPressed)
 {
-public:
     std::string action;
-    PlayerInput(int keyPressed)
+    if (!INPUT_MAP.contains(keyPressed))
     {
-        if (!INPUT_MAP.contains(keyPressed))
-        {
-            action = "";
-            return;
-        }
-        action = INPUT_MAP.at(keyPressed);
-    };
+        action = "";
+        return;
+    }
+    action = INPUT_MAP.at(keyPressed);
 };

@@ -11,13 +11,14 @@
 #include "player_input.hpp"
 #include "input.hpp"
 #include "raylib.h"
+#include <vector>
 
-void HandleInput()
-{
-    int key = GetKeyPressed();
-
-    if (key != 0)
-    {
-        PlayerInput test(key);
+void HandleInput(){
+    std::vector<int> inputs;
+    int key = -1;
+    while(key != 0){
+        key = GetKeyPressed();
+        std::string result = PlayerInput(key);
+        
     }
 }
