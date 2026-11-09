@@ -12,18 +12,13 @@
 
 // Example use of worldview and hud
 ///////////////////////////////
+#include "model/config.hpp"
 #include "model/tilemap.hpp"
 #include "view/world_view.hpp"
 #include "view/hud.hpp"
 #include "view/player_sprite.hpp"
 
-#define TILE_SIZE 10
-#define SCREEN_W 480
-#define SCREEN_H 270
-#define MAP_COLS (SCREEN_W / TILE_SIZE)
-#define MAP_ROWS (SCREEN_H / TILE_SIZE)
-
-const float groundY = 4 * TILE_SIZE;
+static const float groundY = 4 * TILE_SIZE;
 
 int main()
 {
@@ -32,22 +27,19 @@ int main()
     map.LoadTestMap();
 
     StaminaBar staminaBar;
-    float stamina = 100.0f;
-    const float maxStamina = 100.0f;
+    const float stamina = PLAYER_MAX_STAMINA;
     PlayerSprite sprite;
 
-    Vector2 playerStart = {(SCREEN_W / 2.0f) - (sprite.layout().width / 2), groundY};
+    const Vector2 playerStart = {(SCREEN_W / 2.0f) - (sprite.layout().width / 2), groundY};
 
-    
-    while (!view.ShouldClose()) 
+    while (!view.ShouldClose())
     {
         view.BeginFrame();
         view.DrawTileMap(map);
-        staminaBar.draw(stamina, maxStamina);
+        staminaBar.draw(stamina, PLAYER_MAX_STAMINA);
         sprite.draw(view, playerStart, true);
         view.EndFrame();
     }
 
     return 0;
 }
-//////////////////////////////////////////////

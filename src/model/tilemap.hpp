@@ -13,13 +13,21 @@
 * tests/test_<module>.cpp, and keep make test passing at every step. */
 
 #include <vector>
-#include "raylib.h"
 
 enum class TileType
 {
     Empty,
     Earth,
     Food
+};
+
+/** Axis-aligned rectangle in world space (y up). The View converts it to screen space. */
+struct WorldRect
+{
+    float x;
+    float y;
+    float width;
+    float height;
 };
 
 class TileMap
@@ -29,19 +37,19 @@ class TileMap
 
         void LoadTestMap();
 
-        int Cols() const {return cols_;};
-        int Rows() const {return rows_;};
-        int TileSize() const {return tileSize_;};
+        int Cols() const { return cols_; }
+        int Rows() const { return rows_; }
+        int TileSize() const { return tileSize_; }
 
         bool InBounds(int col, int row) const;
         TileType Get(int col, int row) const;
         void Set(int col, int row, TileType type);
 
         bool IsSolid(int col, int row) const; // anything not Empty is solid
-        Rectangle TileWorldRect(int col, int row) const; // World space rectangle covered by tile
+        WorldRect TileWorldRect(int col, int row) const; // World space rectangle covered by tile
 
     private:
-        int Index(int col, int row) const {return row * cols_ + col; };
+        int Index(int col, int row) const { return row * cols_ + col; }
 
         int cols_;
         int rows_;

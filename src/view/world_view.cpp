@@ -26,7 +26,7 @@ WorldView::~WorldView()
     CloseWindow();
 }
 
-bool WorldView::ShouldClose() const 
+bool WorldView::ShouldClose()
 {
     return WindowShouldClose();
 }
@@ -49,17 +49,17 @@ void WorldView::DrawTileMap(const TileMap& map) const
     }
 }
 
-void WorldView::EndFrame() const 
+void WorldView::EndFrame()
 {
     EndDrawing();
 }
 
-Rectangle WorldView::ToScreen(const Rectangle& r) const 
+Rectangle WorldView::ToScreen(const WorldRect& r) const
 {
     return Rectangle{ r.x, screenH_ - (r.y + r.height), r.width, r.height };
 }
 
-Rectangle WorldView::ToScreen(Vector2 worldPos, float w, float h) const 
+Rectangle WorldView::ToScreen(Vector2 worldPos, float w, float h) const
 {
-    return ToScreen(Rectangle{ worldPos.x, worldPos.y, w, h });
+    return ToScreen(WorldRect{ worldPos.x, worldPos.y, w, h });
 }

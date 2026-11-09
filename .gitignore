@@ -14,6 +14,8 @@ notes.md
 # macOS / Linux build output
 bin/game
 bin/game.dSYM/
+bin/cpp_game
+bin/cpp_game.dSYM/
 
 # generated documentation
 docs/html/

@@ -48,8 +48,8 @@ bool TileMap::IsSolid(int col, int row) const
     return tiles_[Index(col, row)] != TileType::Empty;
 }
 
-Rectangle TileMap::TileWorldRect(int col, int row) const 
+WorldRect TileMap::TileWorldRect(int col, int row) const
 {
     const float t = static_cast<float>(tileSize_);
-    return Rectangle{ col * t, (row - 1) * t, t, t };
+    return WorldRect{ col * t, (row - 1) * t, t, t };
 }

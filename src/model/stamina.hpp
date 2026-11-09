@@ -24,5 +24,5 @@ class Stamina {
 
         void UpdatePlayerStamina(float change);
         float getStamina() const;
-        float ValidateStamina(float stamina);
+        static float ValidateStamina(float stamina);
 };

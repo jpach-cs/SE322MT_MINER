@@ -22,13 +22,13 @@ class WorldView
       WorldView(const WorldView&) = delete;
       WorldView& operator=(const WorldView&) = delete;
    
-      bool ShouldClose() const;
+      static bool ShouldClose();
    
       void BeginFrame() const;                    // BeginDrawing + clear background
       void DrawTileMap(const TileMap& map) const; // earth / food tiles
-      void EndFrame() const;                      // EndDrawing
+      static void EndFrame();                     // EndDrawing
    
-      Rectangle ToScreen(const Rectangle& worldRect) const; // World-space rect (y up) -> screen-space rect (y down).
+      Rectangle ToScreen(const WorldRect& worldRect) const; // World-space rect (y up) -> screen-space rect (y down).
       Rectangle ToScreen(Vector2 worldPos, float w, float h) const; // Convenience for sprites: position is the bottom-left corner in world space.
    
       int ScreenW() const { return screenW_; }
