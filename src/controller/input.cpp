@@ -8,13 +8,16 @@
  * jpach-cs/esof-322_miner_decription. Design: docs/architecture.md (to be written from
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
+#include "player_input.hpp"
 #include "input.hpp"
+#include "raylib.h"
 
+void HandleInput()
+{
+    int key = GetKeyPressed();
 
-std::string[] getPressedKey(){
-    for (int i = 0; i < INPUT_MAP.count(); i++) {
-        if (IsKeyPressed(INPUT_MAP[i].key())) {
-            return PlayerInput(INPUT_MAP[i].key())
-        }
+    if (key != 0)
+    {
+        PlayerInput test(key);
     }
 }
