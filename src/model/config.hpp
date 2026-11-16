@@ -14,7 +14,6 @@
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 
 #include <map>
-#include <string>
 
 
 /*
@@ -52,14 +51,20 @@ constexpr float STAMINA_FROM_FOOD = 40.0f;   /* stamina gained from food */
 constexpr float SPEED_PENALTY = 0.75f;       /* speed penalty when stamina is low */
 constexpr float JUMP_PENALTY = 0.5f;         /* jump penalty when stamina is low */
 
+const enum ACTION_LIST {
+    LEFT,
+    RIGHT,
+    JUMP
+};
+
 // Input Config
 // Key => Action
 inline const std::map<int, std::string> INPUT_MAP = {
-    {int('A'), "left"},
-    {263, "left"}, // Left arrow
-    {int('D'), "right"},
-    {262, "right"}, // Right arrow
-    {int(' '), "jump"},
-    {int('W'), "jump"},
-    {265, "jump"} // Up arrow
+    {int('A'), LEFT},
+    {263, LEFT}, // Left arrow
+    {int('D'), RIGHT},
+    {262, RIGHT}, // Right arrow
+    {int(' '), JUMP},
+    {int('W'), JUMP},
+    {265, JUMP} // Up arrow
 };

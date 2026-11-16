@@ -12,7 +12,6 @@
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 
-#include <string>
 #include "config.hpp"
 
 /*
@@ -23,7 +22,7 @@
 class PlayerInput
 {
 public:
-    std::string action;
+    int action;
     PlayerInput(int keyPressed)
     {
         if (!INPUT_MAP.contains(keyPressed))
