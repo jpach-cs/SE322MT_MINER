@@ -22,3 +22,5 @@ enum Key: uint8_t{
     RIGHT_INPUT = 1 << 1,
     JUMP_INPUT = 1 << 2,
 };
+
+void ProcessInput();
