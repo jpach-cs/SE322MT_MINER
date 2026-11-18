@@ -6,10 +6,11 @@ SRC      = src/main.c
 CXX      = c++
 CXXFLAGS = -Wall -Wextra -std=c++20 -g
 TEST_SRC = $(wildcard tests/*.cpp)
+CPP_MODEL_SRC = $(wildcard src/model/*.cpp)
+CPP_CONTROLLER_SRC = $(wildcard src/controller/*.cpp)
 
-CPP_SRC = $(wildcard src/*.cpp src/*/*.cpp)
-# Model code has no raylib, so the unit tests compile it in directly.
-MODEL_SRC = $(wildcard src/model/*.cpp)
+CPP_SRC = $(wildcard src/*.cpp src/model/*.cpp src/view/*.cpp src/controller/*.cpp)
+CPP_TARGET = bin/game_cpp
 
 # ── Platform detection ──────────────────────────────────────────────────────
 # Windows (w64devkit): uses the bundled raylib in include/ and lib/.
@@ -25,12 +26,10 @@ ifeq ($(PLATFORM),windows)
     INCLUDES = -Iinclude
     LIBS     = -Llib -lraylib -lopengl32 -lgdi32 -lwinmm
     TARGET   = bin/game.exe
-	CPP_TARGET = bin/game_cpp.exe
     TEST_BIN = bin/tests.exe
     RM       = del /q
     RUN      = $(TARGET)
-	CPP_RUN  = $(CPP_TARGET)
-    CLEAN    = rm -f bin/game.exe bin/tests.exe $(CPP_TARGET)
+    CLEAN    = del bin\game.exe bin\tests.exe
 else ifeq ($(PLATFORM),Darwin)
     BREW_PREFIX ?= $(shell brew --prefix raylib 2>/dev/null || echo /opt/homebrew/opt/raylib)
     INCLUDES = -I$(BREW_PREFIX)/include
@@ -38,40 +37,36 @@ else ifeq ($(PLATFORM),Darwin)
                -framework CoreVideo -framework IOKit -framework Cocoa \
                -framework GLUT -framework OpenGL
     TARGET   = bin/game
-	CPP_TARGET = bin/cpp_game
     TEST_BIN = bin/tests
     RM       = rm -f
     RUN      = ./$(TARGET)
-	CPP_RUN  = ./$(CPP_TARGET)
-    CLEAN    = $(RM) $(CPP_TARGET) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM bin/coverage coverage
+    CLEAN    = $(RM) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM bin/coverage coverage
     GCOV     = xcrun llvm-cov gcov
 else
     INCLUDES = -Iinclude
     LIBS     = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
     TARGET   = bin/game
-	CPP_TARGET = bin/cpp_game
     TEST_BIN = bin/tests
     RM       = rm -f
     RUN      = ./$(TARGET)
-	CPP_RUN  = ./$(CPP_TARGET)
-    CLEAN    = $(RM) $(CPP_TARGET) $(TARGET) $(TEST_BIN) && $(RM) -r bin/coverage coverage
+    CLEAN    = $(RM) $(TARGET) $(TEST_BIN) && $(RM) -r bin/coverage coverage
     GCOV     = gcov
 endif
 
-.PHONY: all run clean docs lint test coverage coverage-report
+.PHONY: all run clean docs lint test tests coverage coverage-report
 
-all: $(CPP_TARGET)
+all: $(TARGET)
 
-$(CPP_TARGET): $(CPP_SRC)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(CPP_SRC) -o $(CPP_TARGET) $(LIBS)
+$(TARGET): $(SRC)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SRC) -o $(TARGET) $(LIBS)
 
 # Compiles and runs the C++ files from /src
-run-c: $(SRC)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SRC) -o $(TARGET) $(LIBS)
-	$(TARGET)
+run-cpp: $(CPP_SRC)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(CPP_SRC) -o $(CPP_TARGET) $(LIBS)
+	./$(CPP_TARGET)
 
-run: $(CPP_TARGET)
-	$(CPP_TARGET)
+run: $(TARGET)
+	$(RUN)
 
 clean:
 	$(CLEAN)
@@ -111,11 +106,13 @@ lint:
 # passed as -isystem so warnings inside them do not drown out ours.
 TEST_INCLUDES = -Ithird_party $(patsubst -I%,-isystem %,$(INCLUDES))
 
-$(TEST_BIN): $(TEST_SRC) $(SRC) $(MODEL_SRC) third_party/doctest.h
-	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) $(TEST_SRC) $(MODEL_SRC) -o $(TEST_BIN) $(LIBS)
+$(TEST_BIN): $(TEST_SRC) $(SRC) $(CPP_MODEL_SRC) $(CPP_CONTROLLER_SRC) third_party/doctest.h
+	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) $(TEST_SRC) $(CPP_MODEL_SRC) $(CPP_CONTROLLER_SRC) -o $(TEST_BIN) $(LIBS)
 
 test: $(TEST_BIN)
 	./$(TEST_BIN)
+
+tests: test
 
 # ── Coverage ────────────────────────────────────────────────────────────────
 # coverage-report builds the tests with --coverage, runs them, and writes
@@ -135,7 +132,7 @@ coverage-report:
 	@command -v gcovr >/dev/null 2>&1 || { echo "gcovr not found (brew install gcovr or pip install gcovr)"; exit 1; }
 	rm -rf bin/coverage coverage
 	mkdir -p bin/coverage coverage
-	$(CXX) $(CXXFLAGS) -O0 --coverage $(TEST_INCLUDES) $(TEST_SRC) $(MODEL_SRC) -o $(COVERAGE_BIN) $(LIBS)
+	$(CXX) $(CXXFLAGS) -O0 --coverage $(TEST_INCLUDES) $(TEST_SRC) $(CPP_MODEL_SRC) $(CPP_CONTROLLER_SRC) -o $(COVERAGE_BIN) $(LIBS)
 	./$(COVERAGE_BIN)
 	gcovr --root . --object-directory bin/coverage --gcov-executable "$(GCOV)" \
 	      --filter '$(COVERAGE_FILTER)' --txt --html-details coverage/index.html \
