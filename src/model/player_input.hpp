@@ -16,7 +16,7 @@
 #include "config.hpp"
 
 /*
-    ALPHA TEAM ROOLZ, BETA TEAM DROOLZ
+    BETA TEAM ROOLZ, ALPHA TEAM DROOLZ
 */
 
 // Convert player input to action
