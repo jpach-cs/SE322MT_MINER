@@ -10,15 +10,22 @@
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 #include "player_input.hpp"
 #include "input.hpp"
+#include "../model/player.hpp"
 #include "raylib.h"
-#include <vector>
 
-void HandleInput(){
-    std::vector<int> inputs;
-    int key = -1;
-    while(key != 0){
-        key = GetKeyPressed();
-        std::string result = PlayerInput(key);
-        
-    }
+uint8_t HandleInput(){
+    uint8_t mask = INPUT_NONE;
+    if(IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT))                           mask |= LEFT_INPUT;
+    if(IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT))                          mask |= RIGHT_INPUT;
+    if(IsKeyPressed(KEY_W) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP))  mask |= JUMP_INPUT;
+    return mask;
+}
+
+void ProcessInput(uint8_t mask)
+{
+    bool moveLeft  = (mask & LEFT_INPUT) != 0;
+    bool moveRight = (mask & RIGHT_INPUT) != 0;
+    bool jump      = (mask & JUMP_INPUT) != 0;
+
+    Player::Move(moveLeft, moveRight, jump);
 }

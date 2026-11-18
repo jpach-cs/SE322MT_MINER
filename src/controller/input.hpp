@@ -14,4 +14,13 @@
 * the Alpha and Beta documents). Move code here one class at a time, with its tests in
 * tests/test_<module>.cpp, and keep make test passing at every step. */
 
-void HandleInput();
+uint8_t HandleInput();
+
+enum Key: uint8_t{
+    INPUT_NONE = 0,
+    LEFT_INPUT = 1 << 0,
+    RIGHT_INPUT = 1 << 1,
+    JUMP_INPUT = 1 << 2,
+};
+
+void ProcessInput();
