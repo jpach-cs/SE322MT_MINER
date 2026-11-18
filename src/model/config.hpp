@@ -57,6 +57,16 @@ const enum ACTION_LIST {
     JUMP
 };
 
+enum KeyMask : uint16_t {
+    KEY_LEFT    = 1 << 0,
+    KEY_RIGHT   = 1 << 1,
+    KEY_UP      = 1 << 2,
+    KEY_SPACE   = 1 << 2,
+    KEY_A       = 1 << 0,
+    KEY_D       = 1 << 1,
+    KEY_W       = 1 << 2,
+     
+}
 // Input Config
 // Key => Action
 inline const std::map<int, std::string> INPUT_MAP = {
