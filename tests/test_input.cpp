@@ -35,14 +35,10 @@ TEST_SUITE("input") {
 
     TEST_CASE("ProcessInput jumps a landed player") {
         Player player;
-        player.SetPosition(Vector2D(10.0f, 100.0f));
-        for (int frame = 0; frame < 20; ++frame) {
-            player.UpdatePhysics();
-            if (player.IsOnGround()) break;
-        }
+        player.UpdatePhysics();
+        REQUIRE(player.IsOnGround());
 
         ProcessInput(JUMP_INPUT, player);
-        player.UpdatePhysics();
 
         CHECK_FALSE(player.IsOnGround());
         CHECK(player.getStamina() == doctest::Approx(85.0f));
