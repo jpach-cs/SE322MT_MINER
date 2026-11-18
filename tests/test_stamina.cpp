@@ -63,11 +63,16 @@ TEST_SUITE("Stamina") {
         CHECK(stamina.getStamina() == doctest::Approx(42.0f));
     }
 
-    TEST_CASE("ValidateStamina clamps values to the valid range") {
+    TEST_CASE("ValidateStamina rejects values outside the valid range") {
         Stamina stamina;
 
-        CHECK(stamina.ValidateStamina(110.0f) == doctest::Approx(100.0f));
-        CHECK(stamina.ValidateStamina(-10.0f) == doctest::Approx(0.0f));
+        CHECK_THROWS_AS(stamina.ValidateStamina(110.0f), const std::invalid_argument&);
+        CHECK_THROWS_AS(stamina.ValidateStamina(-10.0f), const std::invalid_argument&);
         CHECK(stamina.ValidateStamina(42.5f) == doctest::Approx(42.5f));
+    }
+
+    TEST_CASE("construction rejects stamina outside the valid range") {
+        CHECK_THROWS_AS(Stamina(-1.0f), const std::invalid_argument&);
+        CHECK_THROWS_AS(Stamina(101.0f), const std::invalid_argument&);
     }
 }

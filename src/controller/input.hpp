@@ -11,3 +11,19 @@
  * jpach-cs/esof-322_miner_decription. Design: docs/architecture.md (to be written from
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
+#pragma once
+
+#include <cstdint>
+
+class Player;
+
+void HandleInput(Player& player);
+
+enum Key : uint8_t {
+    INPUT_NONE = 0,
+    LEFT_INPUT = 1 << 0,
+    RIGHT_INPUT = 1 << 1,
+    JUMP_INPUT = 1 << 2,
+};
+
+void ProcessInput(uint8_t mask, Player& player);

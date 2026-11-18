@@ -24,26 +24,51 @@ Player::Player(float initialStamina)
 
 Player::~Player() {}
 
-// Handle horizontal movement and input
-// void Player::Move() {
-//     // Left/Right input
-//     if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
-//         velocity.x -= PLAYER_SPEED; 
-//         facingRight = false;
-//     }
-//     if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
-//         velocity.x += PLAYER_SPEED;
-//         facingRight = true;
-//     }
-// }
+void Player::Move() {
+    Move(false, false, false);
+}
 
-// // jumping action
-// void Player::Jump() {
-//     if (Onground && (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))) {
-//         velocity.y = JUMP_FORCE;
-//         Onground = false;
-//     }
-// }
+void Player::Move(bool moveLeft, bool moveRight, bool jump) {
+    float speedMultiplier = stamina < JUMP_STAMINA_COST ? SPEED_PENALTY : 1.0f;
+
+    if (moveRight && !moveLeft) {
+        velocity.x = PLAYER_SPEED * speedMultiplier;
+        facingRight = true;
+    } else if (moveLeft && !moveRight) {
+        velocity.x = -PLAYER_SPEED * speedMultiplier;
+        facingRight = false;
+    } else {
+        velocity.x = 0.0f;
+    }
+
+    if (jump) {
+        Jump();
+    }
+}
+
+void Player::Jump() {
+    if (!Onground) return;
+
+    float jumpMultiplier = stamina < JUMP_STAMINA_COST ? JUMP_PENALTY : 1.0f;
+    velocity.y = JUMP_FORCE * jumpMultiplier;
+    Onground = false;
+    UpdatePlayerStamina(-JUMP_STAMINA_COST);
+}
+
+void Player::UpdatePlayerStamina(float change) {
+    if (change < 0.0f) {
+        if (stamina >= -change) stamina += change;
+    } else {
+        stamina += change;
+    }
+
+    if (stamina > PLAYER_MAX_STAMINA) stamina = PLAYER_MAX_STAMINA;
+    if (stamina < 0.0f) stamina = 0.0f;
+}
+
+float Player::getStamina() const {
+    return stamina;
+}
 
 //  gravity and update vertical position
 void Player::UpdatePhysics() {

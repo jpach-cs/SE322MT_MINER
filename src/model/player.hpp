@@ -21,6 +21,10 @@
  static const float MAX_FALL = -9.0f;
  static const float PLAYER_H = 30.0f;
  static const float GROUND_Y = 270 - PLAYER_H;          // screen bottom (SCREEN_H)
+ static const float JUMP_STAMINA_COST = 15.0f;
+ static const float SPEED_PENALTY = 0.75f;
+ static const float JUMP_PENALTY = 0.5f;
+ static const float PLAYER_MAX_STAMINA = 100.0f;
 
  class Player {
     private:
@@ -39,6 +43,7 @@
         float getStamina() const;
 
         void Move();
+        void Move(bool moveLeft, bool moveRight, bool jump);
         void Jump();
         void UpdatePhysics();
 

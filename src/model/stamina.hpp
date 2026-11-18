@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 /* stamina.hpp
  *
  * Model: game state and rules. Must not include raylib, so it can be unit tested without a window.
