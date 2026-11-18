@@ -87,15 +87,18 @@ docs:
 #   Windows: https://cppcheck.sourceforge.io/
 # The Model must stay testable without a window, so nothing under src/model/
 # may include raylib (phase06 ground rules).
+CPPCHECK = cppcheck --enable=warning,style,performance,portability \
+                    --error-exitcode=1 --inline-suppr --quiet \
+                    --suppress=missingIncludeSystem \
+                    --suppress='*:*raylib.h' --suppress='*:*raymath.h' --suppress='*:*rlgl.h' \
+                    $(INCLUDES) --library=std
+
 lint:
 	@if grep -rnE '^[[:space:]]*#[[:space:]]*include[[:space:]]*[<"](raylib|raymath|rlgl)' src/model; then \
 	    echo "src/model must not include raylib"; exit 1; fi
 	@command -v cppcheck >/dev/null 2>&1 || { echo "cppcheck not found (install hints are in the Makefile)"; exit 1; }
-	cppcheck --std=c99 --enable=warning,style,performance,portability \
-	         --error-exitcode=1 --inline-suppr --quiet \
-	         --suppress=missingIncludeSystem \
-	         --suppress='*:*raylib.h' --suppress='*:*raymath.h' --suppress='*:*rlgl.h' \
-	         $(INCLUDES) --library=std $(SRC)
+	$(CPPCHECK) --std=c99 $(SRC)
+	$(CPPCHECK) --std=c++20 --language=c++ -Isrc $(CPP_SRC)
 
 # ── Tests ───────────────────────────────────────────────────────────────────
 # doctest unit tests for the game rules. tests/test_game.cpp compiles
