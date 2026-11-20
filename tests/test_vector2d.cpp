@@ -1,6 +1,6 @@
 #include "doctest.h"
 
-#include "../src/model/Vector2D.hpp"
+#include "model/Vector2D.hpp"
 
 #include <stdexcept>
 

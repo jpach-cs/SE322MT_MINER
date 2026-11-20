@@ -1,5 +1,7 @@
 #pragma once
-
+#include "model/Vector2D.hpp"
+#include "model/config.hpp"
+#include "model/tilemap.hpp"
 /* player.hpp
  *
  * Model: game state and rules. Must not include raylib, so it can be unit tested without a window.
@@ -13,18 +15,7 @@
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 
-#include "Vector2D.hpp"
-
- static const float PLAYER_SPEED = 2.0f;
- static const float GRAVITY = -0.4f;
- static const float JUMP_FORCE = 7.5f;
- static const float MAX_FALL = -9.0f;
- static const float PLAYER_H = 30.0f;
- static const float GROUND_Y = 270 - PLAYER_H;          // screen bottom (SCREEN_H)
- static const float JUMP_STAMINA_COST = 15.0f;
- static const float SPEED_PENALTY = 0.75f;
- static const float JUMP_PENALTY = 0.5f;
- static const float PLAYER_MAX_STAMINA = 100.0f;
+ static const float GROUND_Y = SCREEN_H - PLAYER_HEIGHT;
 
  class Player {
     private:
@@ -33,11 +24,13 @@
         bool Onground;
         Vector2D position;
         Vector2D velocity;
+        void TileCollision(const TileMap& map, Vector2D previousPosition);
+        void HorizontalCollision(const TileMap& map, Vector2D previousPosition);
+        void VerticalCollision(const TileMap& map, Vector2D previousPosition);
 
     public:
         Player();
         explicit Player(float initialStamina);
-        ~Player();
 
         void UpdatePlayerStamina(float change);
         float getStamina() const;
@@ -45,7 +38,7 @@
         void Move();
         void Move(bool moveLeft, bool moveRight, bool jump);
         void Jump();
-        void UpdatePhysics();
+        void UpdatePhysics(const TileMap& map);
 
         Vector2D getPosition() const;
         void SetPosition(Vector2D pos);

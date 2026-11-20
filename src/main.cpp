@@ -17,6 +17,8 @@
 #include "view/world_view.hpp"
 #include "view/hud.hpp"
 #include "view/player_sprite.hpp"
+#include "model/player.hpp"
+#include "controller/input.hpp"
 
 static const float groundY = 4 * TILE_SIZE;
 
@@ -26,6 +28,8 @@ int main()
     TileMap map(MAP_COLS, MAP_ROWS, TILE_SIZE);
     map.LoadTestMap();
 
+    Player player;
+
     StaminaBar staminaBar;
     const float stamina = PLAYER_MAX_STAMINA;
     PlayerSprite sprite;
@@ -34,6 +38,9 @@ int main()
 
     while (!view.ShouldClose())
     {
+        HandleInput(player);
+        player.UpdatePhysics(map);
+
         view.BeginFrame();
         view.DrawTileMap(map);
         staminaBar.draw(stamina, PLAYER_MAX_STAMINA);

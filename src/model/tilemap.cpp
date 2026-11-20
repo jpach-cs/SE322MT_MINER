@@ -8,7 +8,7 @@
  * jpach-cs/esof-322_miner_decription. Design: docs/architecture.md (to be written from
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
-#include "tilemap.hpp"
+#include "model/tilemap.hpp"
 
 TileMap::TileMap(int cols, int rows, int tileSize): cols_(cols), rows_(rows), tileSize_(tileSize),
                                                     tiles_(static_cast<size_t>(cols) * rows, TileType::Empty) {}

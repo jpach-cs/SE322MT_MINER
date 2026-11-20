@@ -7,35 +7,51 @@
  * A moves left, Space, Up or W jumps). */
 #include "doctest.h"
 
-#include "../src/controller/input.hpp"
-#include "../src/model/player.hpp"
+#include "controller/input.hpp"
+#include "model/config.hpp"
+#include "model/player.hpp"
 
 TEST_SUITE("input") {
+    static TileMap makeTestMap() {
+        TileMap map(MAP_COLS, MAP_ROWS, TILE_SIZE);
+        map.LoadTestMap();
+        return map;
+    }
+
+    static void landPlayer(Player& player, const TileMap& map) {
+        for (int frame = 0; frame < 100 && !player.IsOnGround(); frame++) {
+            player.UpdatePhysics(map);
+        }
+    }
+
     TEST_CASE("ProcessInput moves the player right") {
+        const TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
 
         ProcessInput(RIGHT_INPUT, player);
-        player.UpdatePhysics();
+        player.UpdatePhysics(map);
 
         CHECK(player.getPosition().x == doctest::Approx(12.0f));
         CHECK(player.IsFacingRight());
     }
 
     TEST_CASE("ProcessInput moves the player left") {
+        const TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
 
         ProcessInput(LEFT_INPUT, player);
-        player.UpdatePhysics();
+        player.UpdatePhysics(map);
 
         CHECK(player.getPosition().x == doctest::Approx(8.0f));
         CHECK_FALSE(player.IsFacingRight());
     }
 
     TEST_CASE("ProcessInput jumps a landed player") {
+        const TileMap map = makeTestMap();
         Player player;
-        player.UpdatePhysics();
+        landPlayer(player, map);
         REQUIRE(player.IsOnGround());
 
         ProcessInput(JUMP_INPUT, player);
@@ -45,12 +61,13 @@ TEST_SUITE("input") {
     }
 
     TEST_CASE("ProcessInput with no mask stops movement") {
+        const TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
         ProcessInput(RIGHT_INPUT, player);
 
         ProcessInput(INPUT_NONE, player);
-        player.UpdatePhysics();
+        player.UpdatePhysics(map);
 
         CHECK(player.getPosition().x == doctest::Approx(10.0f));
     }

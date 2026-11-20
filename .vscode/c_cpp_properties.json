@@ -3,7 +3,13 @@
         {
             "name": "Win64-MinGW",
             "includePath": [
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/model",
+                "${workspaceFolder}/src/controller",
+                "${workspaceFolder}/src/view",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/third_party"
             ],
             "defines": [],
             "compilerPath": "gcc",

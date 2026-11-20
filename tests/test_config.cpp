@@ -5,7 +5,7 @@
  * sizes agree with the screen and tile sizes. Model code has no raylib, so
  * these tests never need a window. */
 #include "doctest.h"
-#include "../src/model/config.hpp"
+#include "model/config.hpp"
 
 TEST_CASE("map dimensions agree with the screen and tile sizes")
 {

@@ -5,8 +5,8 @@
 *
 ********************************************************************************************/
 #define SUPPORT_CAMERA_SYSTEM       1
-#include "raylib.h"
-#include "raymath.h"
+#include <raylib.h>
+#include <raymath.h>
 #include <stdbool.h>
 
 #define TILE_SIZE 10

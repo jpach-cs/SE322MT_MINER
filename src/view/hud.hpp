@@ -5,7 +5,7 @@
  * View: drawing only. May read the Model; never changes it.
  *
  * The stamina bar. Today: drawStaminaBar in main.c. */
-#include "../model/config.hpp"
+#include "model/config.hpp"
 
 /** Layout of the stamina bar on screen. Defaults are the main.c constants from config.hpp. */
 struct StaminaBarLayout {

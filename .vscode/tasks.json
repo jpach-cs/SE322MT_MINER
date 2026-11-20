@@ -22,7 +22,7 @@
             "problemMatcher": "$gcc"
         },
         {
-            "label": "run",
+            "label": "run-cpp",
             "type": "shell",
             "command": "make run",
             "options": {
