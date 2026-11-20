@@ -7,8 +7,8 @@ CXX      = c++
 CXXFLAGS = -Wall -Wextra -std=c++20 -g
 TEST_SRC = $(wildcard tests/*.cpp)
 
-CPP_SRC = $(wildcard src/*.cpp src/**/*.cpp)
-#CPP_TARGET = bin/game_cpp
+# Model code has no raylib, so the unit tests compile it in directly.
+MODEL_SRC = $(wildcard src/model/*.cpp)
 
 # ── Platform detection ──────────────────────────────────────────────────────
 # Windows (w64devkit): uses the bundled raylib in include/ and lib/.
@@ -21,8 +21,9 @@ else
 endif
 
 ifeq ($(PLATFORM),windows)
+	CPP_SRC = $(wildcard src/*.cpp src/*/*.cpp)
     INCLUDES = -Iinclude
-    LIBS     = -Llib -lraylib -lopengl32 -lgdi32 -lwinmm
+    LIBS     = -Llib/Windows -lraylib -lopengl32 -lgdi32 -lwinmm
     TARGET   = bin/game.exe
 	CPP_TARGET = bin/game_cpp.exe
     TEST_BIN = bin/tests.exe
@@ -45,8 +46,9 @@ else ifeq ($(PLATFORM),Darwin)
     CLEAN    = $(RM) $(CPP_TARGET) $(TARGET) $(TEST_BIN) && $(RM) -r $(TARGET).dSYM $(TEST_BIN).dSYM bin/coverage coverage
     GCOV     = xcrun llvm-cov gcov
 else
+	CPP_SRC = $(shell find src -name "*.cpp")
     INCLUDES = -Iinclude
-    LIBS     = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+    LIBS     = -Llib/Linux -Wl,-rpath,'$$ORIGIN/../lib/Linux' -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
     TARGET   = bin/game
 	CPP_TARGET = bin/cpp_game
     TEST_BIN = bin/tests
@@ -70,7 +72,7 @@ run-c: $(SRC)
 	$(TARGET)
 
 run: $(CPP_TARGET)
-	$(CPP_TARGET)
+	$(CPP_RUN)
 
 clean:
 	$(CLEAN)
@@ -91,15 +93,18 @@ docs:
 #   Windows: https://cppcheck.sourceforge.io/
 # The Model must stay testable without a window, so nothing under src/model/
 # may include raylib (phase06 ground rules).
+CPPCHECK = cppcheck --enable=warning,style,performance,portability \
+                    --error-exitcode=1 --inline-suppr --quiet \
+                    --suppress=missingIncludeSystem \
+                    --suppress='*:*raylib.h' --suppress='*:*raymath.h' --suppress='*:*rlgl.h' \
+                    $(INCLUDES) --library=std
+
 lint:
 	@if grep -rnE '^[[:space:]]*#[[:space:]]*include[[:space:]]*[<"](raylib|raymath|rlgl)' src/model; then \
 	    echo "src/model must not include raylib"; exit 1; fi
 	@command -v cppcheck >/dev/null 2>&1 || { echo "cppcheck not found (install hints are in the Makefile)"; exit 1; }
-	cppcheck --std=c99 --enable=warning,style,performance,portability \
-	         --error-exitcode=1 --inline-suppr --quiet \
-	         --suppress=missingIncludeSystem \
-	         --suppress='*:*raylib.h' --suppress='*:*raymath.h' --suppress='*:*rlgl.h' \
-	         $(INCLUDES) --library=std $(SRC)
+	$(CPPCHECK) --std=c99 $(SRC)
+	$(CPPCHECK) --std=c++20 --language=c++ -Isrc $(CPP_SRC)
 
 # ── Tests ───────────────────────────────────────────────────────────────────
 # doctest unit tests for the game rules. tests/test_game.cpp compiles
@@ -107,8 +112,8 @@ lint:
 # passed as -isystem so warnings inside them do not drown out ours.
 TEST_INCLUDES = -Ithird_party $(patsubst -I%,-isystem %,$(INCLUDES))
 
-$(TEST_BIN): $(TEST_SRC) $(SRC) third_party/doctest.h
-	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) $(TEST_SRC) -o $(TEST_BIN) $(LIBS)
+$(TEST_BIN): $(TEST_SRC) $(SRC) $(MODEL_SRC) third_party/doctest.h
+	$(CXX) $(CXXFLAGS) $(TEST_INCLUDES) $(TEST_SRC) $(MODEL_SRC) -o $(TEST_BIN) $(LIBS)
 
 test: $(TEST_BIN)
 	./$(TEST_BIN)
@@ -131,7 +136,7 @@ coverage-report:
 	@command -v gcovr >/dev/null 2>&1 || { echo "gcovr not found (brew install gcovr or pip install gcovr)"; exit 1; }
 	rm -rf bin/coverage coverage
 	mkdir -p bin/coverage coverage
-	$(CXX) $(CXXFLAGS) -O0 --coverage $(TEST_INCLUDES) $(TEST_SRC) -o $(COVERAGE_BIN) $(LIBS)
+	$(CXX) $(CXXFLAGS) -O0 --coverage $(TEST_INCLUDES) $(TEST_SRC) $(MODEL_SRC) -o $(COVERAGE_BIN) $(LIBS)
 	./$(COVERAGE_BIN)
 	gcovr --root . --object-directory bin/coverage --gcov-executable "$(GCOV)" \
 	      --filter '$(COVERAGE_FILTER)' --txt --html-details coverage/index.html \
