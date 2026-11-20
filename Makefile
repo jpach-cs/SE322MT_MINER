@@ -25,7 +25,7 @@ endif
 ifeq ($(PLATFORM),windows)
 	CPP_SRC = $(wildcard src/*.cpp src/*/*.cpp)
     INCLUDES = -Iinclude
-    LIBS     = -Llib/Windows -lraylib -lopengl32 -lgdi32 -lwinmm
+    LIBS     = -Llib -lraylib -lopengl32 -lgdi32 -lwinmm
     TARGET   = bin/game.exe
     TEST_BIN = bin/tests.exe
     RM       = del /q
@@ -46,7 +46,7 @@ else ifeq ($(PLATFORM),Darwin)
 else
 	CPP_SRC = $(shell find src -name "*.cpp")
     INCLUDES = -Iinclude
-    LIBS     = -Llib/Linux -Wl,-rpath,'$$ORIGIN/../lib/Linux' -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+    LIBS     = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
     TARGET   = bin/game
     TEST_BIN = bin/tests
     RM       = rm -f
