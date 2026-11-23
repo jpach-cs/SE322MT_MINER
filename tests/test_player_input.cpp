@@ -4,7 +4,7 @@
  * an action name using INPUT_MAP. Model code has no raylib, so these tests
  * never need a window. */
 #include "doctest.h"
-#include "../src/model/player_input.hpp"
+#include "model/player_input.hpp"
 
 TEST_CASE("PlayerInput maps movement keys to left and right")
 {

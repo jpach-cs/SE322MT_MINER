@@ -9,7 +9,7 @@
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 
-#include "world_view.hpp"
+#include "view/world_view.hpp"
 
 WorldView::WorldView(int screenW, int screenH, const char* title, int targetFps)
     : screenW_(screenW), screenH_(screenH),

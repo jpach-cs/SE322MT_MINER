@@ -11,7 +11,7 @@
 #include "doctest.h"
 
 #define main game_main
-#include "../src/main.c"
+#include "main.c"
 #undef main
 
 namespace {

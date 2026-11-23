@@ -3,11 +3,17 @@
         {
             "name": "Win64-MinGW",
             "includePath": [
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/model",
+                "${workspaceFolder}/src/controller",
+                "${workspaceFolder}/src/view",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/third_party"
             ],
             "defines": [],
-            "compilerPath": "gcc",
-            "cStandard": "c99",
+            "compilerPath": "C:/w64devkit/bin/g++.exe",
+            "cppStandard": "c++20",
             "intelliSenseMode": "windows-gcc-x64"
         }
     ],

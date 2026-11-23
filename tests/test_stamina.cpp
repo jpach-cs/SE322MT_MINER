@@ -1,6 +1,6 @@
 #include "doctest.h"
 
-#include "../src/model/stamina.hpp"
+#include "model/stamina.hpp"
 
 TEST_SUITE("Stamina") {
     TEST_CASE("default construction starts at maximum stamina") {

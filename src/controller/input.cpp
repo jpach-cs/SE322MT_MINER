@@ -8,9 +8,9 @@
  * jpach-cs/esof-322_miner_decription. Design: docs/architecture.md (to be written from
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
-#include "input.hpp"
-#include "../model/player.hpp"
-#include "raylib.h"
+#include "controller/input.hpp"
+#include "model/player.hpp"
+#include <raylib.h>
 #include <cstdint>
 
 void HandleInput(Player& player){

@@ -5,8 +5,8 @@
  * rectangles. Model code has no raylib, so these tests never need a window. */
 #include "doctest.h"
 
-#include "../src/model/config.hpp"
-#include "../src/model/tilemap.hpp"
+#include "model/config.hpp"
+#include "model/tilemap.hpp"
 
 namespace {
 

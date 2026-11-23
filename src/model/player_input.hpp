@@ -13,7 +13,7 @@
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 
 #include <string>
-#include "config.hpp"
+#include "model/config.hpp"
 
 /*
     BETA TEAM ROOLZ, ALPHA TEAM DROOLZ

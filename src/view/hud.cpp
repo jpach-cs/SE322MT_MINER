@@ -3,9 +3,9 @@
  * View: drawing only. May read the Model; never changes it.
  *
  * Implementation of hud.hpp. */
-#include "hud.hpp"
+#include "view/hud.hpp"
 
-#include "raylib.h"
+#include <raylib.h>
 
 StaminaBar::StaminaBar(const StaminaBarLayout &layout) : layout_(layout) {}
 

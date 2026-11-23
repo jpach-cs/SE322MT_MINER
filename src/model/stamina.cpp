@@ -9,7 +9,7 @@
  * the Alpha and Beta documents). Move code here one class at a time, with its tests in
  * tests/test_<module>.cpp, and keep make test passing at every step. */
 
-#include "stamina.hpp"
+#include "model/stamina.hpp"
 #include <stdexcept>
 
 Stamina::Stamina()
