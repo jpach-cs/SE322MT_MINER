@@ -18,14 +18,14 @@ TEST_SUITE("input") {
         return map;
     }
 
-    static void landPlayer(Player& player, const TileMap& map) {
+    static void landPlayer(Player& player, TileMap& map) {
         for (int frame = 0; frame < 100 && !player.IsOnGround(); frame++) {
             player.UpdatePhysics(map);
         }
     }
 
     TEST_CASE("ProcessInput moves the player right") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
 
@@ -37,7 +37,7 @@ TEST_SUITE("input") {
     }
 
     TEST_CASE("ProcessInput moves the player left") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
 
@@ -49,7 +49,7 @@ TEST_SUITE("input") {
     }
 
     TEST_CASE("ProcessInput jumps a landed player") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         landPlayer(player, map);
         REQUIRE(player.IsOnGround());
@@ -61,7 +61,7 @@ TEST_SUITE("input") {
     }
 
     TEST_CASE("ProcessInput with no mask stops movement") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
         ProcessInput(RIGHT_INPUT, player);

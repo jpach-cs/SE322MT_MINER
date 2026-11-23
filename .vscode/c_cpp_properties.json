@@ -12,8 +12,8 @@
                 "${workspaceFolder}/third_party"
             ],
             "defines": [],
-            "compilerPath": "gcc",
-            "cStandard": "c99",
+            "compilerPath": "C:/w64devkit/bin/g++.exe",
+            "cppStandard": "c++20",
             "intelliSenseMode": "windows-gcc-x64"
         }
     ],

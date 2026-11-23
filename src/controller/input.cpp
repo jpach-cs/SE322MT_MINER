@@ -16,8 +16,7 @@
 void HandleInput(Player& player){
     uint8_t mask = INPUT_NONE;
     if(IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) mask |= LEFT_INPUT;
-    // if(IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) mask |= RIGHT_INPUT;
-    mask |= RIGHT_INPUT;
+    if(IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) mask |= RIGHT_INPUT;
     if(IsKeyPressed(KEY_W) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_UP)) mask |= JUMP_INPUT;
     ProcessInput(mask, player);
 }

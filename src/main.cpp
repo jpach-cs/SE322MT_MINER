@@ -20,8 +20,6 @@
 #include "model/player.hpp"
 #include "controller/input.hpp"
 
-static const float groundY = 4 * TILE_SIZE;
-
 int main()
 {
     WorldView view(SCREEN_W, SCREEN_H, "Sample Game");
@@ -31,10 +29,7 @@ int main()
     Player player;
 
     StaminaBar staminaBar;
-    const float stamina = PLAYER_MAX_STAMINA;
     PlayerSprite sprite;
-
-    const Vector2 playerStart = {(SCREEN_W / 2.0f) - (sprite.layout().width / 2), groundY};
 
     while (!view.ShouldClose())
     {
@@ -43,8 +38,12 @@ int main()
 
         view.BeginFrame();
         view.DrawTileMap(map);
-        staminaBar.draw(stamina, PLAYER_MAX_STAMINA);
-        sprite.draw(view, playerStart, true);
+        staminaBar.draw(player.getStamina(), PLAYER_MAX_STAMINA);
+
+        const Vector2D position = player.getPosition();
+        sprite.draw(view,
+                    Vector2{position.x, position.y},
+                    player.IsFacingRight());
         view.EndFrame();
     }
 

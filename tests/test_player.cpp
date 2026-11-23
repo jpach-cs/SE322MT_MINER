@@ -12,7 +12,7 @@ TEST_SUITE("player") {
         return map;
     }
 
-    static void landPlayer(Player& player, const TileMap& map) {
+    static void landPlayer(Player& player, TileMap& map) {
         for (int frame = 0; frame < 100 && !player.IsOnGround(); frame++) {
             player.UpdatePhysics(map);
         }
@@ -43,7 +43,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("gravity is applied once per frame in the air") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
 
@@ -57,7 +57,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("falling speed is clamped to MAX_FALL") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(0.0f, -1000.0f));
 
@@ -72,7 +72,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("player lands on solid floor tiles") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
 
         landPlayer(player, map);
@@ -82,7 +82,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("landed player stays on the floor") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
 
         landPlayer(player, map);
@@ -95,7 +95,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("Move moves right and updates facing direction") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
 
@@ -107,7 +107,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("Move moves left and updates facing direction") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
 
@@ -119,7 +119,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("Move with no direction stops horizontal movement") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
         player.Move(false, true, false);
@@ -131,7 +131,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("Move without arguments stops horizontal movement") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
         player.Move(false, true, false);
@@ -143,7 +143,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("Move prioritizes neither direction when both are pressed") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         player.SetPosition(Vector2D(10.0f, 100.0f));
 
@@ -155,7 +155,7 @@ TEST_SUITE("player") {
     }
 
     TEST_CASE("Jump takes a landed player off the ground") {
-        const TileMap map = makeTestMap();
+        TileMap map = makeTestMap();
         Player player;
         landPlayer(player, map);
 
@@ -213,6 +213,23 @@ TEST_SUITE("player") {
         player.UpdatePhysics(map);
 
         CHECK(player.getPosition().x == doctest::Approx(20.0f));
+    }
+
+    TEST_CASE("UpdatePhysics reports the type of the tile hit") {
+        TileMap map(MAP_COLS, MAP_ROWS, TILE_SIZE);
+        map.Set(3, 9, TileType::Food);
+        Player player(20.0f);
+        player.SetPosition(Vector2D(20.0f, 60.0f));
+        player.Move(false, true, false);
+
+        player.UpdatePhysics(map);
+
+        CHECK(player.GetLastCollisionTileType() == TileType::Food);
+        CHECK(player.getStamina() == doctest::Approx(20.0f + STAMINA_FROM_FOOD));
+        CHECK(map.Get(3, 9) == TileType::Empty);
+
+        player.UpdatePhysics(map);
+        CHECK(player.getStamina() == doctest::Approx(20.0f + STAMINA_FROM_FOOD));
     }
 
     TEST_CASE("diagonal movement cannot pass through a wall corner") {

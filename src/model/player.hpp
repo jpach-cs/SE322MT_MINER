@@ -22,11 +22,13 @@
         float stamina;
         bool facingRight;
         bool Onground;
+        TileType lastCollisionTileType;
         Vector2D position;
         Vector2D velocity;
-        void TileCollision(const TileMap& map, Vector2D previousPosition);
-        void HorizontalCollision(const TileMap& map, Vector2D previousPosition);
-        void VerticalCollision(const TileMap& map, Vector2D previousPosition);
+        void TileCollision(TileMap& map, Vector2D previousPosition);
+        void HorizontalCollision(TileMap& map, Vector2D previousPosition);
+        void VerticalCollision(TileMap& map, Vector2D previousPosition);
+        void HandleTileCollision(TileMap& map, TileType type, int col, int row);
 
     public:
         Player();
@@ -38,10 +40,11 @@
         void Move();
         void Move(bool moveLeft, bool moveRight, bool jump);
         void Jump();
-        void UpdatePhysics(const TileMap& map);
+        void UpdatePhysics(TileMap& map);
 
         Vector2D getPosition() const;
         void SetPosition(Vector2D pos);
         bool IsOnGround() const;
         bool IsFacingRight() const;
+        TileType GetLastCollisionTileType() const;
 };
